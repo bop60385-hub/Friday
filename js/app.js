@@ -161,3 +161,11 @@ if (briefingEl) {
   const d = new Date();
   briefingEl.textContent = `Generated ${pad(d.getHours())}:${pad(d.getMinutes())} local`;
 }
+
+/* ── Service Worker registration ─────────────────────────── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/js/service-worker.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#020b14"/>
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#00c8ff" stroke-width="6" opacity="0.4"/>
+  <!-- Inner ring -->
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#00c8ff" stroke-width="3" opacity="0.25"/>
+  <!-- Tick marks -->
+  <line x1="256" y1="46" x2="256" y2="72" stroke="#00c8ff" stroke-width="4" opacity="0.6"/>
+  <line x1="256" y1="440" x2="256" y2="466" stroke="#00c8ff" stroke-width="4" opacity="0.6"/>
+  <line x1="46" y1="256" x2="72" y2="256" stroke="#00c8ff" stroke-width="4" opacity="0.6"/>
+  <line x1="440" y1="256" x2="466" y2="256" stroke="#00c8ff" stroke-width="4" opacity="0.6"/>
+  <!-- Letter F -->
+  <text x="256" y="310" font-family="'Courier New',monospace" font-size="200" font-weight="700"
+        fill="#00c8ff" text-anchor="middle"
+        filter="url(#glow)">F</text>
+  <!-- Glow filter -->
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
