@@ -157,6 +157,7 @@ if (voiceOrb) {
   voiceOrb.addEventListener('click', () => {
     voiceActive = !voiceActive;
     voiceOrb.classList.toggle('listening', voiceActive);
+    voiceOrb.setAttribute('aria-pressed', String(voiceActive));
     if (voiceLabel) {
       voiceLabel.innerHTML = voiceActive
         ? 'STATUS: <span>LISTENING</span>'
