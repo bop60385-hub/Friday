@@ -382,6 +382,12 @@ body::before {
   height: 76px;
   border-radius: 50%;
   border: 2px solid var(--accent);
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  -webkit-appearance: none;
+  appearance: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,6 +395,11 @@ body::before {
   box-shadow: 0 0 20px var(--accent-glow), inset 0 0 16px var(--accent-glow);
   cursor: pointer;
   transition: box-shadow 0.3s;
+}
+
+.voice-orb:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .voice-orb:hover {
