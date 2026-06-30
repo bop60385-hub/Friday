@@ -51,7 +51,7 @@ body {
 body::before {
   content: '';
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background: repeating-linear-gradient(
     0deg,
     transparent,
@@ -76,6 +76,7 @@ body::before {
   flex-direction: column;
   min-height: 100vh;
   padding: 8px;
+  padding: max(8px, env(safe-area-inset-top, 8px)) max(8px, env(safe-area-inset-right, 8px)) max(8px, env(safe-area-inset-bottom, 8px)) max(8px, env(safe-area-inset-left, 8px));
   gap: 8px;
 }
 
@@ -232,7 +233,7 @@ body::before {
 
 /* Desktop */
 @media (min-width: 1024px) {
-  .dashboard { padding: 12px; gap: 10px; }
+  .dashboard { padding: 12px; padding: max(12px, env(safe-area-inset-top, 12px)) max(12px, env(safe-area-inset-right, 12px)) max(12px, env(safe-area-inset-bottom, 12px)) max(12px, env(safe-area-inset-left, 12px)); gap: 10px; }
   .main-grid {
     grid-template-columns: 300px 1fr 280px;
     grid-template-rows: auto 1fr;
@@ -649,15 +650,23 @@ body::before {
 
 .scanner-ring-circle {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   border-radius: 50%;
   border: 1.5px solid var(--border-bright);
 }
 
 .scanner-ring-sweep {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   border-radius: 50%;
+  background: var(--accent-glow); /* fallback for very old Safari */
+  background: -webkit-conic-gradient(
+    from 0deg,
+    transparent 0%,
+    var(--accent-glow) 30%,
+    var(--accent) 35%,
+    transparent 36%
+  );
   background: conic-gradient(
     from 0deg,
     transparent 0%,
