@@ -5,10 +5,12 @@
 
 'use strict';
 
+/* ── Shared helpers ─────────────────────────────────────────── */
+const pad = n => String(n).padStart(2, '0');
+
 /* ── Clock ─────────────────────────────────────────────────── */
 function updateClock() {
   const now  = new Date();
-  const pad  = n => String(n).padStart(2, '0');
   const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
@@ -35,7 +37,6 @@ function updateUptime() {
   const h = Math.floor(uptimeSeconds / 3600);
   const m = Math.floor((uptimeSeconds % 3600) / 60);
   const s = uptimeSeconds % 60;
-  const pad = n => String(n).padStart(2, '0');
   const el = document.getElementById('uptime');
   if (el) el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
@@ -109,7 +110,6 @@ function escapeHtml(str) {
 
 function currentTimeStr() {
   const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
@@ -159,6 +159,5 @@ if (voiceOrb) {
 const briefingEl = document.getElementById('briefing-time');
 if (briefingEl) {
   const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
   briefingEl.textContent = `Generated ${pad(d.getHours())}:${pad(d.getMinutes())} local`;
 }
