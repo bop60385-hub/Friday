@@ -89,15 +89,31 @@ const convInput  = document.getElementById('conv-input');
 const btnSend    = document.getElementById('btn-send');
 
 function appendMessage({ role, text, time }) {
+  if (!convList) return;
   const isAI = role === 'ai';
+
   const msg = document.createElement('div');
   msg.className = 'conv-msg';
-  msg.innerHTML = `
-    <div class="conv-avatar ${role}">${isAI ? 'F' : 'U'}</div>
-    <div class="conv-bubble">
-      <div class="conv-meta"><span>${isAI ? 'FRIDAY' : 'YOU'}</span> · ${time}</div>
-      <div class="conv-text">${escapeHtml(text)}</div>
-    </div>`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `conv-avatar ${isAI ? 'ai' : 'user'}`;
+  avatar.textContent = isAI ? 'F' : 'U';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'conv-bubble';
+
+  const meta = document.createElement('div');
+  meta.className = 'conv-meta';
+  const who = document.createElement('span');
+  who.textContent = isAI ? 'FRIDAY' : 'YOU';
+  meta.append(who, ` · ${time}`);
+
+  const body = document.createElement('div');
+  body.className = 'conv-text';
+  body.textContent = text;
+
+  bubble.append(meta, body);
+  msg.append(avatar, bubble);
   convList.appendChild(msg);
   convList.scrollTop = convList.scrollHeight;
 }
