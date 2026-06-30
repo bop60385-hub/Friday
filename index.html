@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FRIDAY — Intelligence Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ════════════════════════════════════════
+       HEADER — brand · clock · status
+       ════════════════════════════════════════ -->
+  <header class="header">
+
+    <div class="header-brand">
+      <div class="brand-logo">F</div>
+      <div class="brand-text">
+        <span class="brand-name">Friday</span>
+        <span class="brand-tagline">Personal Intelligence OS</span>
+      </div>
+    </div>
+
+    <div class="header-clock">
+      <div class="clock-time" id="clock-time">00:00:00</div>
+      <div class="clock-date" id="clock-date">LOADING…</div>
+    </div>
+
+    <div class="header-status">
+      <div class="status-badge">
+        <div class="status-dot online"></div>
+        All Systems Online
+      </div>
+      <div class="status-badge">
+        <div class="status-dot online"></div>
+        AI Core Active
+      </div>
+      <div class="status-badge">
+        <div class="status-dot idle"></div>
+        Voice: Standby
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ════════════════════════════════════════
+       MAIN GRID
+       ════════════════════════════════════════ -->
+  <div class="main-grid">
+
+    <!-- ── LEFT COLUMN ─────────────────────── -->
+    <div class="col-left">
+
+      <!-- System Status -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">⬡</span> System Status
+          </div>
+          <span class="panel-badge live">Live</span>
+        </div>
+        <div class="panel-body">
+          <div class="system-grid">
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">CPU</div>
+              <div class="sys-metric-value" id="metric-cpu">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:24%"></div>
+              </div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Memory</div>
+              <div class="sys-metric-value" id="metric-mem">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:55%"></div>
+              </div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Latency</div>
+              <div class="sys-metric-value green" id="metric-net">—</div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">AI Load</div>
+              <div class="sys-metric-value yellow" id="metric-ai">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:70%"></div>
+              </div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Uptime</div>
+              <div class="sys-metric-value green" id="uptime">00:00:00</div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Version</div>
+              <div class="sys-metric-value">v0.1.0</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Assistant -->
+      <div class="panel voice-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Voice Assistant
+          </div>
+          <span class="panel-badge idle">Standby</span>
+        </div>
+        <div class="panel-body">
+          <div class="voice-orb" id="voice-orb" title="Tap to activate">
+            <span class="voice-orb-icon">🎙</span>
+          </div>
+          <div class="voice-state-label" id="voice-state-label">
+            STATUS: <span>STANDBY</span>
+          </div>
+          <div class="waveform" style="opacity:0.35">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <div class="voice-state-label">TAP ORB TO ACTIVATE</div>
+        </div>
+      </div>
+
+    </div><!-- /col-left -->
+
+
+    <!-- ── CENTRE COLUMN ───────────────────── -->
+    <div class="col-center">
+
+      <!-- Daily Briefing -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">▣</span> Daily Briefing
+          </div>
+          <span class="panel-badge ready" id="briefing-time">Generated</span>
+        </div>
+        <div class="panel-body">
+          <p class="briefing-intro">
+            Good day. Here is your intelligence summary for today. Three high-priority
+            items require your attention. AI markets are trending positive.
+            Your opportunity pipeline has two new entries overnight.
+          </p>
+          <div class="briefing-items">
+
+            <div class="briefing-item priority-high">
+              <div class="briefing-item-icon">🔺</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">Funding window closes in 48h</div>
+                <div class="briefing-item-sub">Innovate UK · AI &amp; Productivity Grant — up to £250,000</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-med">
+              <div class="briefing-item-icon">📈</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">AI sector up 2.1% overnight</div>
+                <div class="briefing-item-sub">NVDA +1.8% · MSFT +2.3% · GOOG +1.1% — watchlist active</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-green">
+              <div class="briefing-item-icon">🤝</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">New partnership lead identified</div>
+                <div class="briefing-item-sub">Potential collaboration flagged via LinkedIn signal · Relevance: 91%</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-low">
+              <div class="briefing-item-icon">📋</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">3 research reports ready to review</div>
+                <div class="briefing-item-sub">Market trends · Competitor analysis · Weekly digest</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation History -->
+      <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◉</span> Conversation
+          </div>
+          <span class="panel-badge live">Active</span>
+        </div>
+        <div class="panel-body" style="flex:1; display:flex; flex-direction:column;">
+          <div class="conv-list" id="conv-list">
+
+            <div class="conv-msg">
+              <div class="conv-avatar ai">F</div>
+              <div class="conv-bubble">
+                <div class="conv-meta"><span>FRIDAY</span> · 08:00</div>
+                <div class="conv-text">
+                  Good morning. I'm online and ready. Your briefing is prepared —
+                  three high-priority items today. How can I assist you?<span class="typing-cursor"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="conv-msg">
+              <div class="conv-avatar user">U</div>
+              <div class="conv-bubble">
+                <div class="conv-meta"><span>YOU</span> · 08:01</div>
+                <div class="conv-text">Show me the top opportunities from last night's scan.</div>
+              </div>
+            </div>
+
+            <div class="conv-msg">
+              <div class="conv-avatar ai">F</div>
+              <div class="conv-bubble">
+                <div class="conv-meta"><span>FRIDAY</span> · 08:01</div>
+                <div class="conv-text">
+                  Scanning complete. Found 5 opportunities across fintech, AI tooling, and creator
+                  economy verticals. Top match: an AI grant with 91% relevance score and a 48-hour
+                  close window. Shall I open the full report?
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="conv-input-row">
+            <input
+              class="conv-input"
+              id="conv-input"
+              type="text"
+              placeholder="Message Friday…"
+              autocomplete="off"
+            />
+            <button class="btn-send" id="btn-send">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col-center -->
+
+
+    <!-- ── RIGHT COLUMN ─────────────────────── -->
+    <div class="col-right">
+
+      <!-- News Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> News Intelligence
+          </div>
+          <span class="panel-badge beta">Beta</span>
+        </div>
+        <div class="panel-body">
+          <div class="news-items">
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag ai">AI</span>
+              <div class="news-item-text">
+                <div class="news-item-title">OpenAI releases new reasoning model with 40% efficiency gains</div>
+                <div class="news-item-time">2h ago · techcrunch.com</div>
+              </div>
+            </div>
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag fin">FIN</span>
+              <div class="news-item-text">
+                <div class="news-item-title">UK fintech funding hits £1.2B in Q2 2026</div>
+                <div class="news-item-time">4h ago · ft.com</div>
+              </div>
+            </div>
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag tech">TECH</span>
+              <div class="news-item-text">
+                <div class="news-item-title">Agentic AI pipelines are reshaping enterprise workflows</div>
+                <div class="news-item-time">6h ago · wired.com</div>
+              </div>
+            </div>
+
+          </div>
+          <div class="news-connect-cta mt-8">⊕ Connect Live News Feed</div>
+        </div>
+      </div>
+
+      <!-- Weather Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◌</span> Weather
+          </div>
+          <span class="panel-badge idle">Offline</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+          <div class="weather-placeholder">
+            <div class="weather-icon-wrap">⛅</div>
+            <div class="weather-info">
+              <div class="weather-temp">— °C</div>
+              <div class="weather-desc">Location not set</div>
+            </div>
+            <div class="weather-connect">Connect</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opportunity Scanner -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◎</span> Opportunity Scanner
+          </div>
+          <span class="panel-badge ready">Ready</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+          <div class="scanner-placeholder">
+            <div class="scanner-ring">
+              <div class="scanner-ring-circle"></div>
+              <div class="scanner-ring-sweep"></div>
+              <div class="scanner-ring-dot"></div>
+              <div class="scanner-ring-dot scanner-ring-dot2"></div>
+            </div>
+            <div class="scanner-label">Active Scan Running</div>
+            <div class="scanner-sub">Monitoring 12 sectors · 340+ signals</div>
+            <div class="scanner-sub" style="color:var(--accent-dim);">Next full report in 47 min</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col-right -->
+
+  </div><!-- /main-grid -->
+
+  <!-- ════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════ -->
+  <footer class="footer-bar">
+    <div class="footer-item">
+      <div class="dot"></div>
+      Friday OS v0.1.0
+    </div>
+    <div class="footer-item">
+      Encrypted · End-to-End Secure
+    </div>
+    <div class="footer-item">
+      AI Core: GPT-4o · Latency: &lt;200ms
+    </div>
+    <div class="footer-item">
+      <div class="dot"></div>
+      All Systems Nominal
+    </div>
+  </footer>
+
+</div><!-- /dashboard -->
+
+<script src="js/app.js"></script>
+</body>
+</html>
