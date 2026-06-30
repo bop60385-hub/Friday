@@ -119,7 +119,7 @@ function appendMessage({ role, text, time }) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, c => ({
+  return String(str).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   })[c]);
 }
