@@ -16,8 +16,8 @@ Friday is a voice-first personal intelligence assistant web app designed for Git
 
 ## Run locally
 
-Open `/home/runner/work/Friday/Friday/index.html` in a modern browser (HTTPS or localhost recommended for speech features).
+Open `./index.html` in a modern browser (HTTPS or localhost recommended for speech features).
 
 ## Future AI API integration
 
-`/home/runner/work/Friday/Friday/app.js` includes an async `queryExternalAI(prompt)` hook for integrating external AI providers later.
+`./app.js` includes an async `queryExternalAI(prompt)` hook for integrating external AI providers later.

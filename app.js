@@ -2,7 +2,6 @@ const appState = {
   recognition: null,
   listening: false,
   messages: [],
-  briefingReady: false,
 };
 
 const statusEl = document.getElementById('status');
@@ -191,7 +190,6 @@ briefingButton.addEventListener('click', () => {
   const briefing = generateBriefing();
   briefingText.textContent = briefing;
   addMessage('friday', briefing);
-  appState.briefingReady = true;
 });
 
 if ('serviceWorker' in navigator) {
