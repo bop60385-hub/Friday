@@ -162,12 +162,15 @@ async function sendMessage() {
 
 /* ── Mute toggle ──────────────────────────────────────────────────────── */
 
-muteBtn.addEventListener('click', () => {
-  isMuted = !isMuted;
+function setMuted(muted) {
+  isMuted = muted;
   muteBtn.title = isMuted ? 'Unmute Friday' : 'Mute Friday';
   muteBtn.querySelector('.icon').textContent = isMuted ? '🔇' : '🔊';
+  autoSpeakToggle.checked = !isMuted;
   if (isMuted) voiceManager.stop();
-});
+}
+
+muteBtn.addEventListener('click', () => setMuted(!isMuted));
 
 /* ── Settings panel ───────────────────────────────────────────────────── */
 
@@ -221,15 +224,11 @@ function populateVoiceList() {
 voiceSelect.addEventListener('change', () => {
   voiceManager.setVoiceByName(voiceSelect.value || null);
 
-  // Speak a short preview using the newly selected voice.
-  voiceManager.speak("Voice updated. I'm Friday, ready to assist you.");
+  // Speak a short preview using the newly selected voice (if not muted).
+  if (!isMuted) voiceManager.speak("Voice updated. I'm Friday, ready to assist you.");
 });
 
-autoSpeakToggle.addEventListener('change', () => {
-  isMuted = !autoSpeakToggle.checked;
-  muteBtn.querySelector('.icon').textContent = isMuted ? '🔇' : '🔊';
-  muteBtn.title = isMuted ? 'Unmute Friday' : 'Mute Friday';
-});
+autoSpeakToggle.addEventListener('change', () => setMuted(!autoSpeakToggle.checked));
 
 /* ── Input handlers ───────────────────────────────────────────────────── */
 
