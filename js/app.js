@@ -130,6 +130,7 @@ function currentTimeStr() {
 }
 
 function sendMessage() {
+  if (!convInput) return;
   const text = convInput.value.trim();
   if (!text) return;
 
