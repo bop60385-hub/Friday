@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050b1a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Friday" />
+    <title>Friday • Personal Intelligence Officer</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="header-panel glow-panel">
+        <p class="kicker">Friday</p>
+        <h1>Personal Intelligence Officer</h1>
+        <p id="status" class="status">Ready when you are.</p>
+      </header>
+
+      <section class="briefing glow-panel" aria-live="polite">
+        <h2>Daily Briefing</h2>
+        <p id="briefing-text">
+          Good day. Markets, geopolitics, and weather updates are standing by.
+        </p>
+        <button id="briefing-button" class="secondary-btn" type="button">Generate Briefing</button>
+      </section>
+
+      <section class="actions glow-panel" aria-label="Focus areas">
+        <h2>Focus Areas</h2>
+        <ul>
+          <li>Markets & economic trends</li>
+          <li>Geopolitical developments</li>
+          <li>Income and investment opportunities</li>
+          <li>Productivity and planning support</li>
+          <li>Weather and critical alerts</li>
+        </ul>
+      </section>
+
+      <section class="conversation glow-panel" aria-live="polite" aria-label="Conversation history">
+        <h2>Conversation</h2>
+        <div id="history" class="history"></div>
+      </section>
+
+      <section class="composer glow-panel">
+        <form id="prompt-form">
+          <label for="prompt" class="sr-only">Ask Friday</label>
+          <textarea id="prompt" rows="3" placeholder="Ask Friday for insights, opportunities, updates, or planning support..."></textarea>
+          <div class="composer-controls">
+            <button type="submit" class="primary-btn">Send</button>
+            <button id="speak-button" class="secondary-btn" type="button">Speak Response</button>
+          </div>
+        </form>
+
+        <button id="mic-button" class="mic-button" type="button" aria-label="Start voice input">
+          <span class="mic-ring"></span>
+          <span class="mic-icon">🎙</span>
+        </button>
+      </section>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
