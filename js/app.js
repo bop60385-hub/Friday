@@ -470,6 +470,8 @@ function initBriefing() {
 
 /* ── Settings Panel ──────────────────────────────────────────── */
 const Settings = (() => {
+  let voicesListenerBound = false;
+
   function open()  { $('settings-panel')?.classList.add('open'); $('settings-overlay')?.classList.remove('hidden'); }
   function close() { $('settings-panel')?.classList.remove('open'); $('settings-overlay')?.classList.add('hidden'); }
 
@@ -500,8 +502,11 @@ const Settings = (() => {
 
   function init() {
     populateVoiceList(VoiceEngine.voices);
-    document.addEventListener('friday:voices-updated', e =>
-      populateVoiceList(e.detail?.voices || VoiceEngine.voices));
+    if (!voicesListenerBound) {
+      document.addEventListener('friday:voices-updated', e =>
+        populateVoiceList(e.detail?.voices || VoiceEngine.voices));
+      voicesListenerBound = true;
+    }
 
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
@@ -596,18 +601,26 @@ function initInstall() {
 }
 
 /* ── Voice Orb ───────────────────────────────────────────────── */
+const tapBindState = new WeakMap();
+
 function bindTapAndClick(el, fn) {
   if (!el) return;
+  if (tapBindState.has(el)) return;
   const TOUCH_DEBOUNCE_MS = 350;
-  let touchHandled = false;
+  const state = { touchHandled: false, timer: null };
+  tapBindState.set(el, state);
   el.addEventListener('touchend', e => {
-    touchHandled = true;
+    state.touchHandled = true;
     e.preventDefault();
     fn(e);
-    setTimeout(() => { touchHandled = false; }, TOUCH_DEBOUNCE_MS);
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = setTimeout(() => {
+      state.touchHandled = false;
+      state.timer = null;
+    }, TOUCH_DEBOUNCE_MS);
   }, { passive: false });
   el.addEventListener('click', e => {
-    if (touchHandled) return;
+    if (state.touchHandled) return;
     fn(e);
   });
 }
