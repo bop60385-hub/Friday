@@ -598,12 +598,13 @@ function initInstall() {
 /* ── Voice Orb ───────────────────────────────────────────────── */
 function bindTapAndClick(el, fn) {
   if (!el) return;
+  const TOUCH_DEBOUNCE_MS = 350;
   let touchHandled = false;
   el.addEventListener('touchend', e => {
     touchHandled = true;
     e.preventDefault();
     fn(e);
-    setTimeout(() => { touchHandled = false; }, 350);
+    setTimeout(() => { touchHandled = false; }, TOUCH_DEBOUNCE_MS);
   }, { passive: false });
   el.addEventListener('click', e => {
     if (touchHandled) return;
