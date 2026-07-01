@@ -55,7 +55,7 @@ const Prefs = {
   _d: null,
   load()       { if (!this._d) { try { this._d = JSON.parse(localStorage.getItem(STORAGE_PREFS) || '{}'); } catch { this._d = {}; } } return this._d; },
   save()       { try { localStorage.setItem(STORAGE_PREFS, JSON.stringify(this._d)); } catch {} },
-  get(k, fb)   { return this.load()[k] !== undefined ? this.load()[k] : fb; },
+  get(k, fb)   { const d = this.load(); return d[k] !== undefined ? d[k] : fb; },
   set(k, v)    { this.load()[k] = v; this.save(); },
 };
 
@@ -192,7 +192,7 @@ const VoiceEngine = (() => {
       _recognition.onend    = ()  => { _isListening = false; if (!_isSpeaking) _setOrbState('standby'); };
       _recognition.start();
     } catch (err) {
-      console.warn('SpeechRecognition failed:', err);
+      console.warn('SpeechRecognition failed:', err.message || err);
       _isListening = false;
       Toast.show('Microphone access failed. Please allow microphone permissions.', 'warn');
     }
@@ -339,6 +339,7 @@ const Convo = (() => {
 /* ── Weather Widget ──────────────────────────────────────────── */
 const Weather = (() => {
   function _wmoInfo(code) {
+    // WMO codes are grouped by tens (e.g. 61–65 are all rain variants)
     return WMO_CODES[code] || WMO_CODES[Math.floor(code / 10) * 10] || ['Unknown', '🌡️'];
   }
 
@@ -433,8 +434,8 @@ const NewsWidget = (() => {
 
       hits.forEach(h => {
         const [label, cls] = _categorise(h.title);
-        let src = '';
-        try { src = new URL(h.url).hostname.replace('www.', ''); } catch {}
+        let src = 'unknown source';
+        try { src = new URL(h.url).hostname.replace('www.', ''); } catch { /* invalid URL */ }
         const div = document.createElement('div');
         div.className = 'news-item-placeholder news-item-live';
         div.innerHTML = `
@@ -554,6 +555,8 @@ function initInstall() {
                        window.matchMedia('(display-mode: standalone)').matches;
   if (isStandalone) return;
 
+  // navigator.platform === 'MacIntel' + maxTouchPoints detects iPadOS 13+ which
+  // reports itself as macOS but is still a touch device without PWA install prompt.
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
