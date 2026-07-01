@@ -120,6 +120,7 @@ setInterval(updateMetrics, 3500);
 /* ── Voice Engine ────────────────────────────────────────────── */
 const VoiceEngine = (() => {
   let _voices      = [];
+  const _voiceListeners = new Set();
   let _recognition = null;
   let _isListening = false;
   let _isSpeaking  = false;
@@ -131,9 +132,9 @@ const VoiceEngine = (() => {
   /* Load available voices (async on Chrome/iOS) */
   function _syncVoices() {
     _voices = speechSynthesis.getVoices();
-    document.dispatchEvent(new CustomEvent('friday:voices-updated', {
-      detail: { voices: _voices.slice() },
-    }));
+    _voiceListeners.forEach(listener => {
+      try { listener(_voices.slice()); } catch {}
+    });
   }
   if (canSpeak) {
     _syncVoices();
@@ -236,8 +237,16 @@ const VoiceEngine = (() => {
     if (hdr)   hdr.textContent    = hdrTxt;
   }
 
+  function onVoicesChanged(listener) {
+    if (typeof listener !== 'function') return () => {};
+    _voiceListeners.add(listener);
+    listener(_voices.slice());
+    return () => _voiceListeners.delete(listener);
+  }
+
   return {
     speak, startListening, stopListening, toggleListening,
+    onVoicesChanged,
     get canListen() { return canListen; },
     get canSpeak()  { return canSpeak;  },
     get voices()    { return _voices;   },
@@ -501,10 +510,8 @@ const Settings = (() => {
   }
 
   function init() {
-    populateVoiceList(VoiceEngine.voices);
     if (!voicesListenerBound) {
-      document.addEventListener('friday:voices-updated', e =>
-        populateVoiceList(e.detail?.voices || VoiceEngine.voices));
+      VoiceEngine.onVoicesChanged(populateVoiceList);
       voicesListenerBound = true;
     }
 
@@ -610,6 +617,7 @@ function bindTapAndClick(el, fn) {
   if (tapBindState.has(el)) return;
   const state = { touchHandled: false, timer: null };
   tapBindState.set(el, state);
+  /** Handle iOS Safari touch + synthetic click double-fire on interactive controls. */
   el.addEventListener('touchend', e => {
     state.touchHandled = true;
     fn(e);
