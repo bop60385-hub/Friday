@@ -907,3 +907,407 @@ body::before {
   80% { clip-path: inset(10% 0 80% 0); transform: translate(0, 0); }
   100%{ clip-path: inset(0 0 96% 0); transform: translate(0, 0); }
 }
+
+/* ============================================================
+   ENHANCED VOICE ORB (larger + state colours)
+   ============================================================ */
+.voice-orb {
+  width: 110px;
+  height: 110px;
+}
+
+.voice-orb::before {
+  width: 134px;
+  height: 134px;
+}
+
+.voice-orb::after {
+  width: 158px;
+  height: 158px;
+}
+
+.voice-orb-icon {
+  font-size: 2.8rem;
+}
+
+/* Listening state — green glow */
+.voice-orb.listening {
+  border-color: var(--green);
+  box-shadow: 0 0 40px var(--green-glow), inset 0 0 24px var(--green-glow);
+  animation: pulse-listen 1s ease-in-out infinite;
+}
+
+@keyframes pulse-listen {
+  0%, 100% { box-shadow: 0 0 30px var(--green-glow), inset 0 0 18px var(--green-glow); }
+  50%       { box-shadow: 0 0 64px rgba(0,255,157,0.65), inset 0 0 38px rgba(0,255,157,0.3); }
+}
+
+/* Speaking state — cyan/blue pulse */
+.voice-orb.speaking {
+  border-color: var(--accent);
+  box-shadow: 0 0 50px var(--accent-glow-strong), inset 0 0 32px var(--accent-glow-strong);
+  animation: pulse-speak 0.65s ease-in-out infinite;
+}
+
+@keyframes pulse-speak {
+  0%, 100% { box-shadow: 0 0 36px var(--accent-glow-strong), inset 0 0 22px var(--accent-glow); }
+  50%       { box-shadow: 0 0 72px rgba(0,200,255,0.75), inset 0 0 50px rgba(0,200,255,0.45); }
+}
+
+/* Processing state — yellow */
+.voice-orb.processing {
+  border-color: var(--yellow);
+  box-shadow: 0 0 30px rgba(255,204,0,0.35), inset 0 0 18px rgba(255,204,0,0.18);
+}
+
+/* Voice unavailable note */
+.voice-unavail-note {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+/* Speak-message button inside conversation */
+.btn-speak-msg {
+  background: transparent;
+  border: none;
+  color: var(--accent-dim);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0 3px;
+  margin-left: 4px;
+  transition: color 0.2s;
+  vertical-align: middle;
+}
+.btn-speak-msg:hover { color: var(--accent); }
+
+/* Mic button in conversation input */
+.btn-mic {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  padding: 0 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  line-height: 1;
+}
+
+.btn-mic:hover,
+.btn-mic.listening { border-color: var(--green);  color: var(--green);  box-shadow: 0 0 8px var(--green-glow); }
+.btn-mic.speaking  { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+
+/* Settings button in header */
+.btn-settings {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.btn-settings:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Briefing speak button */
+.btn-briefing-speak {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent-dim);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-briefing-speak:hover { border-color: var(--accent); color: var(--accent); }
+
+/* News items — live (full opacity, clickable) */
+.news-item-live { opacity: 1 !important; cursor: pointer; }
+.news-item-live:hover { border-color: var(--accent-dim); }
+.news-cat-tag.uk { background: rgba(0,200,255,0.1); color: var(--accent); border: 1px solid var(--accent); }
+
+/* ============================================================
+   INSTALL BANNER
+   ============================================================ */
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  flex-wrap: wrap;
+}
+.install-banner.hidden { display: none; }
+.install-banner-icon { font-size: 1.1rem; flex-shrink: 0; }
+.install-banner-text { flex: 1; min-width: 160px; }
+.install-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.btn-install {
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 0.65rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+.btn-install:hover { background: rgba(0,200,255,0.25); }
+
+.btn-dismiss {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+}
+.btn-dismiss:hover { border-color: var(--text-secondary); color: var(--text-secondary); }
+
+/* ============================================================
+   SETTINGS PANEL
+   ============================================================ */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 11, 20, 0.72);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  transition: opacity 0.25s;
+}
+.settings-overlay.hidden { display: none; }
+
+.settings-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(340px, 100vw);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-bright);
+  box-shadow: -4px 0 32px rgba(0, 200, 255, 0.08);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+  overflow: hidden;
+}
+.settings-panel.open { transform: translateX(0); }
+
+/* corner decorator on settings panel */
+.settings-panel::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 10px; height: 10px;
+  border-width: 0 0 1.5px 1.5px;
+  border-style: solid;
+  border-color: var(--accent);
+  opacity: 0.7;
+  z-index: 2;
+}
+
+.settings-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.settings-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
+}
+
+.settings-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-secondary);
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.settings-close:hover { border-color: var(--red); color: var(--red); }
+
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-section { display: flex; flex-direction: column; gap: 10px; }
+
+.settings-section-label {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent-dim);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.settings-row > label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  flex: 1;
+  min-width: 80px;
+}
+.settings-row > label span {
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+.settings-select {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  padding: 6px 8px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s;
+}
+.settings-select:focus { border-color: var(--accent); }
+
+.settings-range {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--bg-panel-alt);
+  border-radius: 2px;
+  outline: none;
+  border: 1px solid var(--border);
+}
+.settings-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.settings-range::-moz-range-thumb {
+  width: 14px; height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.settings-toggle {
+  flex-shrink: 0;
+  width: 38px; height: 22px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.settings-toggle:checked {
+  background: rgba(0,200,255,0.2);
+  border-color: var(--accent);
+}
+.settings-toggle:checked::after {
+  transform: translateX(16px);
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.settings-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  text-align: left;
+}
+.settings-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+.settings-btn-danger:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 8px rgba(255,60,95,0.25); }
+
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+  z-index: 300;
+  transition: transform 0.3s ease;
+  box-shadow: var(--panel-shadow);
+  max-width: 90vw;
+  text-align: center;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.toast-warn { border-color: var(--yellow); color: var(--yellow); }

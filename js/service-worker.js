@@ -3,7 +3,7 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v1';
+const CACHE_NAME = 'friday-v2';
 
 const PRECACHE_ASSETS = [
   '/',
