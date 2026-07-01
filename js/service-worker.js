@@ -3,7 +3,7 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v2';
+const CACHE_NAME = 'friday-v3';
 // Normalize scope path so cached URLs work in both root deployments and GitHub Pages subpaths.
 const APP_ROOT = self.registration
   ? new URL(self.registration.scope).pathname.replace(/\/$/, '')
