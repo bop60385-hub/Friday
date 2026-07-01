@@ -601,24 +601,24 @@ function initInstall() {
 }
 
 /* ── Voice Orb ───────────────────────────────────────────────── */
+// Prevent synthetic click after touch from double-firing handlers on iOS Safari.
+const IOS_TOUCH_DEBOUNCE_MS = 350;
 const tapBindState = new WeakMap();
 
 function bindTapAndClick(el, fn) {
   if (!el) return;
   if (tapBindState.has(el)) return;
-  const TOUCH_DEBOUNCE_MS = 350;
   const state = { touchHandled: false, timer: null };
   tapBindState.set(el, state);
   el.addEventListener('touchend', e => {
     state.touchHandled = true;
-    e.preventDefault();
     fn(e);
     if (state.timer) clearTimeout(state.timer);
     state.timer = setTimeout(() => {
       state.touchHandled = false;
       state.timer = null;
-    }, TOUCH_DEBOUNCE_MS);
-  }, { passive: false });
+    }, IOS_TOUCH_DEBOUNCE_MS);
+  });
   el.addEventListener('click', e => {
     if (state.touchHandled) return;
     fn(e);
@@ -660,7 +660,7 @@ function initConvInput() {
 /* ── Service Worker ──────────────────────────────────────────── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('js/service-worker.js')
+    navigator.serviceWorker.register('./js/service-worker.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
