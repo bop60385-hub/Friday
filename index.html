@@ -16,6 +16,18 @@
 </head>
 <body>
 
+<!-- ════════════════════════════════════════
+     INSTALL BANNER (hidden until triggered)
+     ════════════════════════════════════════ -->
+<div id="install-banner" class="install-banner hidden" role="banner">
+  <span class="install-banner-icon">📲</span>
+  <span class="install-banner-text" id="install-text">Install Friday for the best experience.</span>
+  <div class="install-banner-actions">
+    <button class="btn-install" id="install-btn" style="display:none">Install</button>
+    <button class="btn-dismiss" id="install-dismiss">✕</button>
+  </div>
+</div>
+
 <div class="dashboard">
 
   <!-- ════════════════════════════════════════
@@ -47,8 +59,9 @@
       </div>
       <div class="status-badge">
         <div class="status-dot idle"></div>
-        Voice: Standby
+        <span id="header-voice-status">Voice: Standby</span>
       </div>
+      <button class="btn-settings" id="btn-settings" title="Settings" aria-label="Open settings">⚙</button>
     </div>
 
   </header>
@@ -108,7 +121,7 @@
 
             <div class="sys-metric">
               <div class="sys-metric-label">Version</div>
-              <div class="sys-metric-value">v0.1.0</div>
+              <div class="sys-metric-value">v1.0.0</div>
             </div>
 
           </div>
@@ -121,10 +134,10 @@
           <div class="panel-title">
             <span class="panel-icon">◈</span> Voice Assistant
           </div>
-          <span class="panel-badge idle">Standby</span>
+          <span class="panel-badge idle" id="voice-badge">Standby</span>
         </div>
         <div class="panel-body">
-          <button class="voice-orb" id="voice-orb" type="button" title="Tap to activate" aria-label="Toggle voice assistant" aria-pressed="false">
+          <button class="voice-orb" id="voice-orb" type="button" title="Tap to activate voice" aria-label="Toggle voice assistant" aria-pressed="false">
             <span class="voice-orb-icon" aria-hidden="true">🎙</span>
           </button>
           <div class="voice-state-label" id="voice-state-label">
@@ -158,7 +171,10 @@
           <div class="panel-title">
             <span class="panel-icon">▣</span> Daily Briefing
           </div>
-          <span class="panel-badge ready" id="briefing-time">Generated</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="btn-briefing-speak" id="briefing-speak" title="Hear briefing">♫ Hear</button>
+            <span class="panel-badge ready" id="briefing-time">Generated</span>
+          </div>
         </div>
         <div class="panel-body">
           <p class="briefing-intro">
@@ -213,42 +229,11 @@
           <span class="panel-badge live">Active</span>
         </div>
         <div class="panel-body" style="flex:1; display:flex; flex-direction:column;">
-          <div class="conv-list" id="conv-list">
-
-            <div class="conv-msg">
-              <div class="conv-avatar ai">F</div>
-              <div class="conv-bubble">
-                <div class="conv-meta"><span>FRIDAY</span> · 08:00</div>
-                <div class="conv-text">
-                  Good morning. I'm online and ready. Your briefing is prepared —
-                  three high-priority items today. How can I assist you?<span class="typing-cursor"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="conv-msg">
-              <div class="conv-avatar user">U</div>
-              <div class="conv-bubble">
-                <div class="conv-meta"><span>YOU</span> · 08:01</div>
-                <div class="conv-text">Show me the top opportunities from last night's scan.</div>
-              </div>
-            </div>
-
-            <div class="conv-msg">
-              <div class="conv-avatar ai">F</div>
-              <div class="conv-bubble">
-                <div class="conv-meta"><span>FRIDAY</span> · 08:01</div>
-                <div class="conv-text">
-                  Scanning complete. Found 5 opportunities across fintech, AI tooling, and creator
-                  economy verticals. Top match: an AI grant with 91% relevance score and a 48-hour
-                  close window. Shall I open the full report?
-                </div>
-              </div>
-            </div>
-
-          </div>
+          <!-- Messages rendered by JS from localStorage -->
+          <div class="conv-list" id="conv-list"></div>
 
           <div class="conv-input-row">
+            <button class="btn-mic" id="btn-mic" title="Voice input" aria-label="Voice input">🎙</button>
             <input
               class="conv-input"
               id="conv-input"
@@ -275,7 +260,7 @@
           <div class="panel-title">
             <span class="panel-icon">◈</span> News Intelligence
           </div>
-          <span class="panel-badge beta">Beta</span>
+          <span class="panel-badge beta" id="news-badge">Loading</span>
         </div>
         <div class="panel-body">
           <div class="news-items">
@@ -315,14 +300,14 @@
           <div class="panel-title">
             <span class="panel-icon">◌</span> Weather
           </div>
-          <span class="panel-badge idle">Offline</span>
+          <span class="panel-badge idle" id="weather-badge">Offline</span>
         </div>
         <div class="panel-body" style="padding:0;">
           <div class="weather-placeholder">
             <div class="weather-icon-wrap">⛅</div>
             <div class="weather-info">
               <div class="weather-temp">— °C</div>
-              <div class="weather-desc">Location not set</div>
+              <div class="weather-desc">Tap Connect for live weather</div>
             </div>
             <div class="weather-connect">Connect</div>
           </div>
@@ -362,13 +347,13 @@
   <footer class="footer-bar">
     <div class="footer-item">
       <div class="dot"></div>
-      Friday OS v0.1.0
+      Friday OS v1.0.0
     </div>
     <div class="footer-item">
       Encrypted · End-to-End Secure
     </div>
     <div class="footer-item">
-      AI Core: GPT-4o · Latency: &lt;200ms
+      AI Core: GPT-4o · Voice: en-GB
     </div>
     <div class="footer-item">
       <div class="dot"></div>
@@ -377,6 +362,67 @@
   </footer>
 
 </div><!-- /dashboard -->
+
+<!-- ════════════════════════════════════════
+     SETTINGS PANEL
+     ════════════════════════════════════════ -->
+<div id="settings-overlay" class="settings-overlay hidden" aria-hidden="true"></div>
+<aside id="settings-panel" class="settings-panel" role="dialog" aria-label="Settings">
+
+  <div class="settings-hd">
+    <div class="settings-title">⚙ Settings</div>
+    <button class="settings-close" id="settings-close" aria-label="Close settings">✕</button>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- Voice -->
+    <section class="settings-section">
+      <div class="settings-section-label">Voice</div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-voice" style="flex:none;">Voice selection</label>
+        <select id="setting-voice" class="settings-select">
+          <option value="">Auto (British Female)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <label for="setting-rate">Speed <span id="setting-rate-val">0.9</span></label>
+        <input type="range" id="setting-rate" class="settings-range" min="0.5" max="2" step="0.1" value="0.9" />
+      </div>
+
+      <div class="settings-row">
+        <label for="setting-pitch">Pitch <span id="setting-pitch-val">1.1</span></label>
+        <input type="range" id="setting-pitch" class="settings-range" min="0.5" max="2" step="0.1" value="1.1" />
+      </div>
+
+      <button class="settings-btn" id="setting-test-voice">▶ Test Voice</button>
+    </section>
+
+    <!-- Behaviour -->
+    <section class="settings-section">
+      <div class="settings-section-label">Behaviour</div>
+      <div class="settings-row">
+        <label for="setting-autolisten">Auto-listen after response</label>
+        <input type="checkbox" id="setting-autolisten" class="settings-toggle" />
+      </div>
+    </section>
+
+    <!-- Weather -->
+    <section class="settings-section">
+      <div class="settings-section-label">Weather</div>
+      <button class="settings-btn" id="setting-refresh-weather">↻ Update Location</button>
+    </section>
+
+    <!-- Data -->
+    <section class="settings-section">
+      <div class="settings-section-label">Data</div>
+      <button class="settings-btn settings-btn-danger" id="setting-clear-history">🗑 Clear Conversation History</button>
+    </section>
+
+  </div>
+</aside>
 
 <script src="js/app.js"></script>
 </body>
