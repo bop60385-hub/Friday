@@ -270,7 +270,7 @@ const Convo = (() => {
     "Understood. I'll keep monitoring and alert you if anything changes significantly.",
   ];
 
-  const _convList = $('conv-list');
+  let _convList = null;
 
   function _greet() {
     const h = new Date().getHours();
@@ -305,6 +305,7 @@ const Convo = (() => {
   }
 
   function init() {
+    _convList = $('conv-list');
     _msgs = Hist.load();
     if (_msgs.length === 0) {
       _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
@@ -677,11 +678,13 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ── Boot ────────────────────────────────────────────────────── */
-Convo.init();
-initVoiceOrb();
-initConvInput();
-initBriefing();
-Settings.init();
-initInstall();
-Weather.init();
-NewsWidget.init();
+document.addEventListener('DOMContentLoaded', () => {
+  Convo.init();
+  initVoiceOrb();
+  initConvInput();
+  initBriefing();
+  Settings.init();
+  initInstall();
+  Weather.init();
+  NewsWidget.init();
+});
