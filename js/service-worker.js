@@ -5,7 +5,9 @@
 
 const CACHE_NAME = 'friday-v2';
 // Normalize scope path so cached URLs work in both root deployments and GitHub Pages subpaths.
-const APP_ROOT = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const APP_ROOT = self.registration
+  ? new URL(self.registration.scope).pathname.replace(/\/$/, '')
+  : '';
 const withRoot = path => `${APP_ROOT}${path}`;
 
 const PRECACHE_ASSETS = [

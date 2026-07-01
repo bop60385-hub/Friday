@@ -133,7 +133,7 @@ const VoiceEngine = (() => {
   function _syncVoices() {
     _voices = speechSynthesis.getVoices();
     _voiceListeners.forEach(listener => {
-      try { listener(_voices.slice()); } catch {}
+      try { listener(_voices.slice()); } catch (err) { console.warn('Voice listener error:', err); }
     });
   }
   if (canSpeak) {
@@ -614,7 +614,10 @@ const tapBindState = new WeakMap();
 
 function bindTapAndClick(el, fn) {
   if (!el) return;
-  if (tapBindState.has(el)) return;
+  if (tapBindState.has(el)) {
+    console.warn('bindTapAndClick: element is already bound', el);
+    return;
+  }
   const state = { touchHandled: false, timer: null };
   tapBindState.set(el, state);
   /** Handle iOS Safari touch + synthetic click double-fire on interactive controls. */
