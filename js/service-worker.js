@@ -4,16 +4,18 @@
    ============================================================ */
 
 const CACHE_NAME = 'friday-v2';
+const APP_ROOT = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const withRoot = path => `${APP_ROOT}${path}`;
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon.svg',
+  withRoot('/'),
+  withRoot('/index.html'),
+  withRoot('/css/style.css'),
+  withRoot('/js/app.js'),
+  withRoot('/manifest.webmanifest'),
+  withRoot('/icons/icon-192.png'),
+  withRoot('/icons/icon-512.png'),
+  withRoot('/icons/icon.svg'),
 ];
 
 /* ── Install: pre-cache all shell assets ─────────────────── */
@@ -61,7 +63,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback — return cached index for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(withRoot('/index.html'));
         }
       });
     })

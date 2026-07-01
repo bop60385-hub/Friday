@@ -129,14 +129,16 @@ const VoiceEngine = (() => {
   const canSpeak  = !!window.speechSynthesis;
 
   /* Load available voices (async on Chrome/iOS) */
-  function _loadVoices() {
+  function _syncVoices() {
     _voices = speechSynthesis.getVoices();
-    Settings.populateVoiceList(_voices);
+    document.dispatchEvent(new CustomEvent('friday:voices-updated', {
+      detail: { voices: _voices.slice() },
+    }));
   }
   if (canSpeak) {
-    _loadVoices();
+    _syncVoices();
     if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
-      speechSynthesis.onvoiceschanged = _loadVoices;
+      speechSynthesis.onvoiceschanged = _syncVoices;
     }
   }
 
@@ -497,6 +499,10 @@ const Settings = (() => {
   }
 
   function init() {
+    populateVoiceList(VoiceEngine.voices);
+    document.addEventListener('friday:voices-updated', e =>
+      populateVoiceList(e.detail?.voices || VoiceEngine.voices));
+
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
     $('settings-overlay')?.addEventListener('click', close);
@@ -590,6 +596,21 @@ function initInstall() {
 }
 
 /* ── Voice Orb ───────────────────────────────────────────────── */
+function bindTapAndClick(el, fn) {
+  if (!el) return;
+  let touchHandled = false;
+  el.addEventListener('touchend', e => {
+    touchHandled = true;
+    e.preventDefault();
+    fn(e);
+    setTimeout(() => { touchHandled = false; }, 350);
+  }, { passive: false });
+  el.addEventListener('click', e => {
+    if (touchHandled) return;
+    fn(e);
+  });
+}
+
 function initVoiceOrb() {
   const orb = $('voice-orb');
   if (!orb) return;
@@ -600,7 +621,7 @@ function initVoiceOrb() {
     note.textContent = 'Voice recognition unavailable in this browser';
     orb.closest('.voice-panel')?.querySelector('.panel-body')?.appendChild(note);
   }
-  orb.addEventListener('click', () => {
+  bindTapAndClick(orb, () => {
     if (!VoiceEngine.canListen) {
       Toast.show('Voice recognition is not available in this browser. Try Chrome or iOS Safari 14.5+.', 'warn');
       return;
@@ -614,9 +635,9 @@ function initConvInput() {
   const inp  = $('conv-input');
   const send = $('btn-send');
   const mic  = $('btn-mic');
-  send?.addEventListener('click', () => { if (inp) Convo.handleInput(inp.value.trim()); });
+  bindTapAndClick(send, () => { if (inp) Convo.handleInput(inp.value.trim()); });
   inp?.addEventListener('keydown', e => { if (e.key === 'Enter') Convo.handleInput(inp.value.trim()); });
-  mic?.addEventListener('click',  () => {
+  bindTapAndClick(mic, () => {
     if (!VoiceEngine.canListen) { Toast.show('Voice input not available in this browser.', 'warn'); return; }
     VoiceEngine.toggleListening();
   });
@@ -625,7 +646,7 @@ function initConvInput() {
 /* ── Service Worker ──────────────────────────────────────────── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/js/service-worker.js')
+    navigator.serviceWorker.register('js/service-worker.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
