@@ -3,17 +3,20 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v2';
+const CACHE_NAME = 'friday-v3';
+const RAW_APP_ROOT = self.location.pathname.replace(/\/js\/service-worker\.js$/, '').replace(/\/$/, '');
+const APP_ROOT = RAW_APP_ROOT === '/' ? '' : RAW_APP_ROOT;
+const withRoot = path => `${APP_ROOT}${path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`}`;
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon.svg',
+  withRoot('/'),
+  withRoot('/index.html'),
+  withRoot('/css/style.css'),
+  withRoot('/js/app.js'),
+  withRoot('/manifest.webmanifest'),
+  withRoot('/icons/icon-192.png'),
+  withRoot('/icons/icon-512.png'),
+  withRoot('/icons/icon.svg'),
 ];
 
 /* ── Install: pre-cache all shell assets ─────────────────── */
@@ -61,7 +64,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback — return cached index for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(withRoot('/index.html'));
         }
       });
     })

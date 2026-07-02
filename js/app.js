@@ -49,6 +49,20 @@ const esc  = s  => String(s).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 const tsNow = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+const APP_ROOT = (() => {
+  const { pathname } = window.location;
+  if (!pathname || pathname === '/') return '';
+  return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname.replace(/\/[^/]*$/, '');
+})();
+const withRoot = path => `${APP_ROOT}${path.startsWith('/') ? path : `/${path}`}`;
+const log   = (level, scope, message, meta) => {
+  const prefix = `[Friday][${scope}] ${message}`;
+  if (meta !== undefined) {
+    console[level](prefix, meta);
+  } else {
+    console[level](prefix);
+  }
+};
 
 /* ── Local Storage helpers ───────────────────────────────────── */
 const Prefs = {
@@ -130,13 +144,15 @@ const VoiceEngine = (() => {
 
   /* Load available voices (async on Chrome/iOS) */
   function _loadVoices() {
-    _voices = speechSynthesis.getVoices();
-    Settings.populateVoiceList(_voices);
+    if (!canSpeak) return [];
+    _voices = window.speechSynthesis.getVoices();
+    window.dispatchEvent(new CustomEvent('friday:voiceschanged', { detail: _voices.slice() }));
+    return _voices;
   }
   if (canSpeak) {
     _loadVoices();
-    if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
-      speechSynthesis.onvoiceschanged = _loadVoices;
+    if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+      window.speechSynthesis.onvoiceschanged = _loadVoices;
     }
   }
 
@@ -155,8 +171,12 @@ const VoiceEngine = (() => {
 
   /* Speak text with British female voice */
   function speak(text, onEnd) {
-    if (!canSpeak) { if (onEnd) onEnd(); return; }
-    speechSynthesis.cancel();
+    if (!canSpeak) {
+      log('warn', 'voice', 'Speech synthesis is unavailable in this browser.');
+      if (onEnd) onEnd();
+      return;
+    }
+    window.speechSynthesis.cancel();
     const utter    = new SpeechSynthesisUtterance(text);
     const voice    = _pickVoice(Prefs.get('voiceName', null));
     if (voice) utter.voice = voice;
@@ -171,12 +191,17 @@ const VoiceEngine = (() => {
       if (Prefs.get('autoListen', false) && canListen) startListening();
     };
     utter.onerror  = () => { _isSpeaking = false; _setOrbState('standby'); if (onEnd) onEnd(); };
-    speechSynthesis.speak(utter);
+    window.speechSynthesis.speak(utter);
   }
 
   /* Speech recognition */
   function startListening() {
-    if (!canListen || _isListening) return;
+    if (!canListen) {
+      log('warn', 'voice', 'Speech recognition API is unavailable.');
+      Toast.show('Voice input is not available in this browser. You can still type messages.', 'warn');
+      return false;
+    }
+    if (_isListening) return true;
     try {
       _recognition = new SpeechRec();
       _recognition.lang             = 'en-GB';
@@ -188,13 +213,19 @@ const VoiceEngine = (() => {
         const t = e.results[0]?.[0]?.transcript || '';
         if (t.trim()) Convo.handleInput(t.trim());
       };
-      _recognition.onerror  = ()  => { _isListening = false; _setOrbState('standby'); };
+      _recognition.onerror  = event  => {
+        _isListening = false;
+        _setOrbState('standby');
+        log('warn', 'voice', 'Speech recognition error.', event?.error || event);
+      };
       _recognition.onend    = ()  => { _isListening = false; if (!_isSpeaking) _setOrbState('standby'); };
       _recognition.start();
+      return true;
     } catch (err) {
-      console.warn('SpeechRecognition failed:', err.message || err);
+      log('warn', 'voice', 'SpeechRecognition failed to start.', err?.message || err);
       _isListening = false;
-      Toast.show('Microphone access failed. Please allow microphone permissions.', 'warn');
+      Toast.show('Microphone access failed. Please allow microphone permissions or use typed input.', 'warn');
+      return false;
     }
   }
 
@@ -497,6 +528,8 @@ const Settings = (() => {
   }
 
   function init() {
+    populateVoiceList(VoiceEngine.voices);
+    window.addEventListener('friday:voiceschanged', e => populateVoiceList(e.detail || VoiceEngine.voices));
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
     $('settings-overlay')?.addEventListener('click', close);
@@ -592,13 +625,17 @@ function initInstall() {
 /* ── Voice Orb ───────────────────────────────────────────────── */
 function initVoiceOrb() {
   const orb = $('voice-orb');
-  if (!orb) return;
+  if (!orb) {
+    log('warn', 'boot', 'Voice orb element was not found.');
+    return;
+  }
   if (!VoiceEngine.canListen) {
     orb.title = 'Voice input requires iOS 14.5+, Chrome, or Edge';
     const note = document.createElement('div');
     note.className = 'voice-unavail-note';
     note.textContent = 'Voice recognition unavailable in this browser';
     orb.closest('.voice-panel')?.querySelector('.panel-body')?.appendChild(note);
+    log('info', 'voice', 'Voice orb initialized in fallback mode.');
   }
   orb.addEventListener('click', () => {
     if (!VoiceEngine.canListen) {
@@ -614,6 +651,13 @@ function initConvInput() {
   const inp  = $('conv-input');
   const send = $('btn-send');
   const mic  = $('btn-mic');
+  if (!inp || !send || !mic) {
+    log('warn', 'boot', 'Conversation controls are missing.', {
+      hasInput: !!inp,
+      hasSend: !!send,
+      hasMic: !!mic,
+    });
+  }
   send?.addEventListener('click', () => { if (inp) Convo.handleInput(inp.value.trim()); });
   inp?.addEventListener('keydown', e => { if (e.key === 'Enter') Convo.handleInput(inp.value.trim()); });
   mic?.addEventListener('click',  () => {
@@ -625,17 +669,40 @@ function initConvInput() {
 /* ── Service Worker ──────────────────────────────────────────── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/js/service-worker.js')
-      .catch(err => console.warn('SW registration failed:', err));
+    navigator.serviceWorker.register(withRoot('/js/service-worker.js'))
+      .catch(err => log('warn', 'service-worker', 'Registration failed.', err));
   });
 }
 
 /* ── Boot ────────────────────────────────────────────────────── */
-Convo.init();
-initVoiceOrb();
-initConvInput();
-initBriefing();
-Settings.init();
-initInstall();
-Weather.init();
-NewsWidget.init();
+function bootApp() {
+  const steps = [
+    ['conversation', () => Convo.init()],
+    ['voice-orb', () => initVoiceOrb()],
+    ['conversation-input', () => initConvInput()],
+    ['briefing', () => initBriefing()],
+    ['settings', () => Settings.init()],
+    ['install', () => initInstall()],
+    ['weather', () => Weather.init()],
+    ['news', () => NewsWidget.init()],
+  ];
+
+  log('info', 'boot', 'Application initialization started.');
+  steps.forEach(([name, init]) => {
+    try {
+      init();
+      log('info', 'boot', `${name} initialized.`);
+    } catch (err) {
+      log('error', 'boot', `${name} failed to initialize.`, err);
+    }
+  });
+  if (!VoiceEngine.canListen) {
+    log('warn', 'voice', 'Speech recognition unavailable; typed input fallback remains enabled.');
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootApp, { once: true });
+} else {
+  bootApp();
+}
