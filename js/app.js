@@ -288,9 +288,15 @@ const Convo = (() => {
   const _convList = $('conv-list');
 
   function _fmtName(name) {
-    const clean = String(name || '').trim().replace(/[^a-zA-Z'\-]/g, '');
+    const clean = String(name || '')
+      .trim()
+      .replace(/[^a-zA-Z'\-\s]/g, '')
+      .replace(/\s+/g, ' ');
     if (!clean) return '';
-    return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+    return clean
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
   }
 
   function _name() {
@@ -298,7 +304,7 @@ const Convo = (() => {
   }
 
   function _maybeStoreName(text) {
-    const match = text.match(/\b(?:my name is|i am|i'm|call me|it'?s)\s+([a-zA-Z][a-zA-Z'\-]{1,30})\b/i);
+    const match = text.match(/\b(?:my name is|i am|i'm|call me|it'?s)\s+([a-zA-Z][a-zA-Z'\-\s]{1,40})\b/i);
     if (!match) return;
     const name = _fmtName(match[1]);
     if (name) Prefs.set(NAME_KEY, name);
@@ -308,9 +314,10 @@ const Convo = (() => {
     const input = text.trim();
     const name = _name();
     const nameSuffix = name ? `, ${name}` : '';
+    const hour = new Date().getHours();
 
     if (/\b(hello|hi|hey|good morning|good afternoon|good evening)\b/i.test(input)) {
-      return `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}${nameSuffix}. Systems online.`;
+      return `Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}${nameSuffix}. Systems online.`;
     }
     if (/\b(how are you|how do you feel|are you okay)\b/i.test(input)) {
       return 'Operating normally and ready to assist.';
@@ -324,7 +331,7 @@ const Convo = (() => {
     if (/\b(good night|night|sleep)\b/i.test(input)) {
       return `Sleep well${name ? `, ${name}` : ''}. I'll be here when you need me.`;
     }
-    if (/\b(struggling|overwhelmed|stressed|difficult|hard time|anxious|worried|panic|failed)\b/i.test(input)) {
+    if (/\b(struggling|overwhelmed|stressed|hard time|anxious|worried|panic(?:king)?|burned out|can't cope|cannot cope)\b/i.test(input)) {
       return `I understand${nameSuffix}. We'll take this one step at a time. You're not handling this alone.`;
     }
     if (/\b(news|finance|market|stocks?|economy|inflation|interest rates?|geopolitics|world events?|war)\b/i.test(input)) {
