@@ -375,9 +375,18 @@ const Convo = (() => {
 
 /* ── Weather Widget ──────────────────────────────────────────── */
 const Weather = (() => {
+  let _lastTemp = null, _lastCode = null, _lastCity = '';
+
   function _wmoInfo(code) {
     // WMO codes are grouped by tens (e.g. 61–65 are all rain variants)
     return WMO_CODES[code] || WMO_CODES[Math.floor(code / 10) * 10] || ['Unknown', '🌡️'];
+  }
+
+  function _toDisplayTemp(celsiusTemp) {
+    const unit = Prefs.get('tempUnit', 'C');
+    return unit === 'F'
+      ? { value: Math.round(celsiusTemp * 9 / 5 + 32), label: '°F' }
+      : { value: Math.round(celsiusTemp),               label: '°C' };
   }
 
   async function _fetchWeather(lat, lon) {
@@ -390,22 +399,28 @@ const Weather = (() => {
     try {
       const r = await fetch(`${GEOCODE_API}?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
       const d = await r.json();
-      return d.city || d.locality || d.principalSubdivision || '';
-    } catch { return ''; }
+      return { city: d.city || d.locality || d.principalSubdivision || '', countryCode: d.countryCode || '' };
+    } catch { return { city: '', countryCode: '' }; }
   }
 
   function _updateUI(temp, code, city) {
+    _lastTemp = temp; _lastCode = code; _lastCity = city;
     const [desc, icon] = _wmoInfo(code);
+    const { value, label } = _toDisplayTemp(temp);
     const iconEl  = document.querySelector('.weather-icon-wrap');
     const tempEl  = document.querySelector('.weather-temp');
     const descEl  = document.querySelector('.weather-desc');
     const connBtn = document.querySelector('.weather-connect');
     const badge   = $('weather-badge');
     if (iconEl)  { iconEl.textContent = icon; iconEl.style.opacity = '1'; }
-    if (tempEl)  { tempEl.textContent = `${Math.round(temp)} °C`; tempEl.style.color = 'var(--text-primary)'; }
+    if (tempEl)  { tempEl.textContent = `${value} ${label}`; tempEl.style.color = 'var(--text-primary)'; }
     if (descEl)  { descEl.textContent = city ? `${desc} · ${city}` : desc; descEl.style.color = 'var(--text-secondary)'; }
     if (connBtn) connBtn.style.display = 'none';
     if (badge)   { badge.textContent = 'Live'; badge.className = 'panel-badge live'; badge.id = 'weather-badge'; }
+  }
+
+  function refresh() {
+    if (_lastTemp !== null) _updateUI(_lastTemp, _lastCode, _lastCity);
   }
 
   async function requestLocation() {
@@ -414,8 +429,12 @@ const Weather = (() => {
       const { latitude: lat, longitude: lon } = pos.coords;
       Prefs.set('wLat', lat); Prefs.set('wLon', lon);
       try {
-        const [data, city] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
+        const [data, geo] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
+        const { city, countryCode } = geo;
         if (city) Prefs.set('wCity', city);
+        if (Prefs.get('tempUnit', null) === null) {
+          Prefs.set('tempUnit', countryCode === 'US' ? 'F' : 'C');
+        }
         const c = data.current;
         _updateUI(c.temperature_2m, c.weathercode, city);
         Toast.show(`Weather updated — ${city || 'your location'}`, 'info');
@@ -434,7 +453,7 @@ const Weather = (() => {
     }
   }
 
-  return { init, requestLocation };
+  return { init, requestLocation, refresh };
 })();
 
 /* ── News Widget ─────────────────────────────────────────────── */
@@ -573,6 +592,15 @@ const Settings = (() => {
     /* Clear history */
     $('setting-clear-history')?.addEventListener('click', () => {
       if (confirm('Clear all conversation history?')) { Convo.clearHistory(); close(); }
+    });
+
+    /* Temperature units */
+    const savedUnit = Prefs.get('tempUnit', 'C');
+    document.querySelectorAll('input[name="setting-tempunit"]').forEach(el => {
+      el.checked = el.value === savedUnit;
+      el.addEventListener('change', e => {
+        if (e.target.checked) { Prefs.set('tempUnit', e.target.value); Weather.refresh(); }
+      });
     });
 
     /* Refresh weather */

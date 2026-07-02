@@ -1271,6 +1271,21 @@ body::before {
   box-shadow: 0 0 6px var(--accent-glow);
 }
 
+.settings-radio-group { gap: 12px; }
+.settings-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.settings-radio-label input[type="radio"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .settings-btn {
   background: transparent;
   border: 1px solid var(--border);
