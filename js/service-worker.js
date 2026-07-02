@@ -6,11 +6,18 @@
 const CACHE_NAME = 'friday-v3';
 const SERVICE_WORKER_PATH = '/js/service-worker.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const hasExpectedPath = self.location.pathname.endsWith(SERVICE_WORKER_PATH);
+if (!hasExpectedPath) {
+  console.warn(`[Friday][service-worker] Unexpected registration path: ${self.location.pathname}`);
+}
 const RAW_APP_ROOT = self.location.pathname
   .replace(new RegExp(`${escapeRegExp(SERVICE_WORKER_PATH)}$`), '')
   .replace(/\/$/, '');
 const APP_ROOT = RAW_APP_ROOT === '/' ? '' : RAW_APP_ROOT;
-const withRoot = path => `${APP_ROOT}${path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`}`;
+const withRoot = path => {
+  const normalizedPath = path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`;
+  return `${APP_ROOT}${normalizedPath}`;
+};
 
 const PRECACHE_ASSETS = [
   withRoot('/'),

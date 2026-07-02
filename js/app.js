@@ -57,7 +57,10 @@ const APP_ROOT = (() => {
   const rawRoot = scriptPath.replace(new RegExp(`${escapeRegExp(APP_SCRIPT_PATH)}$`), '').replace(/\/$/, '');
   return rawRoot === '/' ? '' : rawRoot;
 })();
-const withRoot = path => `${APP_ROOT}${path.startsWith('/') ? path : `/${path}`}`;
+const withRoot = path => {
+  const normalizedPath = path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`;
+  return `${APP_ROOT}${normalizedPath}`;
+};
 const log   = (level, scope, message, meta) => {
   const prefix = `[Friday][${scope}] ${message}`;
   if (meta !== undefined) {
@@ -147,10 +150,9 @@ const VoiceEngine = (() => {
 
   /* Load available voices (async on Chrome/iOS) */
   function _loadVoices() {
-    if (!canSpeak) return [];
+    if (!canSpeak) return;
     _voices = window.speechSynthesis.getVoices();
     window.dispatchEvent(new CustomEvent('friday:voiceschanged', { detail: _voices.slice() }));
-    return _voices;
   }
   if (canSpeak) {
     _loadVoices();
@@ -531,7 +533,7 @@ const Settings = (() => {
   }
 
   function init() {
-    populateVoiceList(VoiceEngine.voices);
+    if (VoiceEngine.voices.length) populateVoiceList(VoiceEngine.voices);
     window.addEventListener('friday:voiceschanged', e => populateVoiceList(e.detail || VoiceEngine.voices));
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
@@ -660,6 +662,7 @@ function initConvInput() {
       hasSend: !!send,
       hasMic: !!mic,
     });
+    return;
   }
   send?.addEventListener('click', () => { if (inp) Convo.handleInput(inp.value.trim()); });
   inp?.addEventListener('keydown', e => { if (e.key === 'Enter') Convo.handleInput(inp.value.trim()); });
