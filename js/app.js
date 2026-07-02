@@ -297,17 +297,46 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
+  let _lastReplyIdx = -1;
 
   const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
+    // Analytical / intelligence
+    "I've reviewed the available signals. The picture is mixed, but there are two threads worth pulling on. Shall I start with the one that looks most time-sensitive?",
+    "Based on what I'm seeing, the situation has shifted since yesterday. I'd put the probability at around 65%, though I want to be clear that's an estimate — the data is still thin in places.",
+    "There are a few interpretations here. The most straightforward reading is encouraging, but I wouldn't rule out a second-order effect worth watching. Do you want me to model that out?",
+    "Running a deeper pass on that now. It may take a moment — I'd rather give you something solid than something fast.",
+    "The pattern is consistent with what we saw three months ago, though the context is different this time. I think the comparison is useful, but it doesn't tell the whole story.",
+    // Informative / briefing
+    "Your briefing this morning flags three items of note: a shift in the technology sector, a policy update with downstream implications, and one item on your watchlist that's moved unexpectedly. Where would you like to start?",
+    "I've pulled the latest data. The headline figure looks strong, but there's some softness underneath it that's worth understanding before drawing conclusions.",
+    "There's been a development since we last spoke. It's not urgent, but it does change the framing on something we discussed earlier.",
+    "I've cross-referenced that against recent activity. The correlation is moderate — meaningful, but not definitive. I wouldn't act on it alone.",
+    // Supportive / advisory
+    "That's a reasonable concern. Given what you've outlined, I'd suggest pausing before committing — not because the opportunity isn't real, but because a few more data points in the next 24 hours would sharpen the picture considerably.",
+    "I understand why this feels pressing. Let me help you separate what's genuinely urgent from what can wait without consequence.",
+    "I'd encourage some caution here. The upside is visible, but so is the downside — and I'm not sure the risk is fully priced in at the moment.",
+    "You're asking the right question. I don't have a certain answer, but I can give you the best frame I have and flag where the uncertainty lives.",
+    "This is exactly the kind of decision that benefits from stepping back slightly. The instinct is sound — it's the timing I'd want to think through with you.",
+    // Follow-up / probing questions
+    "Before I go further — are you looking for a quick orientation, or a proper analytical breakdown? That'll help me pitch this at the right level.",
+    "That depends on what you're trying to achieve. Could you tell me a bit more about the constraint you're working within?",
+    "I want to make sure I'm answering the right question. When you say that, do you mean in terms of risk, timing, or something else?",
+    "Is there a specific outcome you're working toward here? It'll help me focus what I pull together.",
+    "Worth noting — that connects to something we touched on earlier. Do you want me to bring that thread back in, or keep this separate?",
+    // Uncertainty / honesty
+    "I'll be honest — I'm less certain about this one than I'd like. The evidence is suggestive rather than conclusive. I can give you my best read, but I want you to know the confidence level is lower than usual.",
+    "I don't have enough to give you a reliable answer on that right now. I'd rather say so than give you something misleading. Do you want me to flag it for follow-up when more comes in?",
+    "That's at the edge of what I can tell you with confidence. I have a working hypothesis, but I'd treat it as provisional until we have better data.",
+    // Acknowledgement / memory
+    "Noted. I've added that to my working picture — it'll inform how I read things going forward.",
+    "Understood. I'll keep that in view. If anything shifts in a way that's relevant, I'll surface it.",
+    "I've logged that. Is there anything specific you'd like me to watch for in connection with it?",
+    "That's consistent with what you mentioned before. It reinforces the broader pattern — which either confirms the thesis or suggests it needs revisiting. I lean toward the former, but I'm holding it lightly.",
+    // Closing / standing by
+    "I'm here whenever you're ready to continue. Take whatever time you need.",
+    "There's no rush. When you're ready to pick this back up, I'll be here with everything in order.",
+    "Consider it done. Let me know what's next.",
+    "Monitoring continues. I'll alert you if anything material changes.",
   ];
 
   const _convList = $('conv-list');
@@ -369,8 +398,10 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      let idx;
+      do { idx = Math.floor(Math.random() * REPLIES.length); } while (idx === _lastReplyIdx && REPLIES.length > 1);
+      _lastReplyIdx = idx;
+      const reply = REPLIES[idx];
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
