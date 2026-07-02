@@ -417,9 +417,9 @@ const Weather = (() => {
     const connectBtn = $('weather-connect-btn');
     const changeBtn = $('weather-change-btn');
     const refreshBtn = $('weather-refresh-btn');
-    if (connectBtn) connectBtn.style.display = isConnected ? 'none' : 'inline-flex';
-    if (changeBtn) changeBtn.style.display = isConnected ? 'inline-flex' : 'none';
-    if (refreshBtn) refreshBtn.style.display = isConnected ? 'inline-flex' : 'none';
+    connectBtn?.classList.toggle('hidden', isConnected);
+    changeBtn?.classList.toggle('hidden', !isConnected);
+    refreshBtn?.classList.toggle('hidden', !isConnected);
   }
 
   function _setDialogVisible(open) {
@@ -453,8 +453,12 @@ const Weather = (() => {
   }
 
   async function _resolveManualLocation(city, state, zip) {
-    const query = [city, state, zip].filter(Boolean).join(', ');
+    const query = [city, state, zip]
+      .map(value => value.replace(/[^\w\s,\-'.]/g, '').trim())
+      .filter(Boolean)
+      .join(', ');
     if (!query) throw new Error('At least one location field is required.');
+    if (query.length > 120) throw new Error('Location is too long. Use a shorter value.');
     const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Manual location lookup failed with status ${res.status}.`);
@@ -484,6 +488,7 @@ const Weather = (() => {
   }
 
   async function _saveAndApplyManualLocation(city, state, zip) {
+    const hasUserCity = Boolean(city);
     const resolved = await _resolveManualLocation(city, state, zip);
     const lat = resolved.latitude;
     const lon = resolved.longitude;
@@ -497,7 +502,7 @@ const Weather = (() => {
     Prefs.set('wLocationLabel', manualLabel);
     try {
       const reverseCity = await _fetchCity(lat, lon);
-      if (reverseCity && !city) Prefs.set('wCity', reverseCity);
+      if (reverseCity && !hasUserCity) Prefs.set('wCity', reverseCity);
     } catch (err) {
       log('warn', 'weather', 'Reverse geocode lookup failed for manual location.', err);
     }

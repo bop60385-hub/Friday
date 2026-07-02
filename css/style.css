@@ -1125,7 +1125,7 @@ body::before {
   transition: opacity 0.25s;
 }
 .settings-overlay.hidden { display: none; }
-.hidden { display: none !important; }
+.hidden { display: none; }
 
 .settings-panel {
   position: fixed;
