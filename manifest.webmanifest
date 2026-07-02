@@ -1,0 +1,55 @@
+{
+  "name": "Friday \u2014 Intelligence Dashboard",
+  "short_name": "Friday",
+  "description": "AI-powered personal intelligence assistant. Identify opportunities, track trends, and generate actionable insights.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020b14",
+  "theme_color": "#00c8ff",
+  "orientation": "any",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Open Briefing",
+      "short_name": "Briefing",
+      "description": "Jump straight to today's intelligence briefing",
+      "url": "/#briefing",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
