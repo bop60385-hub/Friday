@@ -8,6 +8,13 @@
   // Track only high-signal recurring topics for lightweight personalization.
   const MAX_PREFERRED_TOPICS = 30;
   const MIN_TOPIC_WORD_LENGTH = 4;
+  const TOPIC_WORD_REGEX = new RegExp(`[a-z]{${MIN_TOPIC_WORD_LENGTH},}`, 'g');
+  const NAME_CAPTURE_REGEX = /\bmy name is\s+([a-zA-Z][a-zA-Z\-']{1,30})\b/i;
+  const TOPIC_STOP_WORDS = new Set([
+    'this', 'that', 'from', 'with', 'have', 'will', 'would', 'could', 'should', 'there',
+    'their', 'about', 'into', 'your', 'youre', 'they', 'them', 'just', 'what', 'when',
+    'where', 'which', 'while', 'been', 'being', 'were', 'very', 'more', 'most', 'some',
+  ]);
 
   const PERSONALITIES = {
     professionalBritish: {
@@ -157,7 +164,8 @@
         user: String(userText || ''),
         ai: String(aiText || ''),
       });
-      const words = String(userText || '').toLowerCase().match(new RegExp(`[a-z]{${MIN_TOPIC_WORD_LENGTH},}`, 'g')) || [];
+      const words = (String(userText || '').toLowerCase().match(TOPIC_WORD_REGEX) || [])
+        .filter(word => !TOPIC_STOP_WORDS.has(word));
       const preferredTopics = [...new Set([...(memory.preferredTopics || []), ...words])]
         .slice(-MAX_PREFERRED_TOPICS);
       this.setMemory({ conversationHistory, preferredTopics });
@@ -181,7 +189,7 @@
     },
 
     respond(userText) {
-      const providedName = String(userText || '').match(/\bmy name is\s+([a-zA-Z][a-zA-Z\-']{1,30})\b/i)?.[1];
+      const providedName = String(userText || '').match(NAME_CAPTURE_REGEX)?.[1];
       if (providedName) this.rememberUserName(providedName.charAt(0).toUpperCase() + providedName.slice(1));
       const intent = inferIntent(userText);
       const profile = this.getProfile();

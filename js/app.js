@@ -522,6 +522,15 @@ const Settings = (() => {
   }
 
   function init() {
+    const saveVoicePreferences = (voiceName = Prefs.get('voiceName', '')) => {
+      PersonalityEngine?.rememberPreferredVoice({
+        voiceName,
+        lang: 'en-GB',
+        rate: parseFloat(Prefs.get('rate', 0.9)),
+        pitch: parseFloat(Prefs.get('pitch', 1.0)),
+      });
+    };
+
     if (VoiceEngine.voices.length) populateVoiceList(VoiceEngine.voices);
     window.addEventListener('friday:voiceschanged', e => populateVoiceList(e.detail || VoiceEngine.voices));
     $('btn-settings')?.addEventListener('click', open);
@@ -531,12 +540,7 @@ const Settings = (() => {
     /* Voice selection */
     $('setting-voice')?.addEventListener('change', e => {
       Prefs.set('voiceName', e.target.value);
-      PersonalityEngine?.rememberPreferredVoice({
-        voiceName: e.target.value,
-        lang: 'en-GB',
-        rate: parseFloat(Prefs.get('rate', 0.9)),
-        pitch: parseFloat(Prefs.get('pitch', 1.0)),
-      });
+      saveVoicePreferences(e.target.value);
     });
 
     /* Rate */
@@ -546,12 +550,7 @@ const Settings = (() => {
       if (rateLbl) rateLbl.textContent = rateEl.value;
       rateEl.addEventListener('input', e => {
         Prefs.set('rate', parseFloat(e.target.value));
-        PersonalityEngine?.rememberPreferredVoice({
-          voiceName: Prefs.get('voiceName', ''),
-          lang: 'en-GB',
-          rate: parseFloat(e.target.value),
-          pitch: parseFloat(Prefs.get('pitch', 1.0)),
-        });
+        saveVoicePreferences();
         if (rateLbl) rateLbl.textContent = e.target.value;
       });
     }
@@ -563,12 +562,7 @@ const Settings = (() => {
       if (pitchLbl) pitchLbl.textContent = pitchEl.value;
       pitchEl.addEventListener('input', e => {
         Prefs.set('pitch', parseFloat(e.target.value));
-        PersonalityEngine?.rememberPreferredVoice({
-          voiceName: Prefs.get('voiceName', ''),
-          lang: 'en-GB',
-          rate: parseFloat(Prefs.get('rate', 0.9)),
-          pitch: parseFloat(e.target.value),
-        });
+        saveVoicePreferences();
         if (pitchLbl) pitchLbl.textContent = e.target.value;
       });
     }
