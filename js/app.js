@@ -285,8 +285,13 @@ const Convo = (() => {
   let _msgs    = [];
   const NAME_KEY = 'userName';
   const MAX_NAME_CAPTURE = 40;
+  const NAME_PATTERN = new RegExp(`\\b(?:my name is|i am|i'm|call me)\\s+([a-zA-Z][a-zA-Z'\\-\\s]{1,${MAX_NAME_CAPTURE}})\\b`, 'i');
 
   const _convList = $('conv-list');
+
+  function _timeGreeting(hour = new Date().getHours()) {
+    return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  }
 
   function _fmtName(name) {
     const clean = String(name || '')
@@ -305,7 +310,7 @@ const Convo = (() => {
   }
 
   function _maybeStoreName(text) {
-    const match = text.match(new RegExp(`\\b(?:my name is|i am|i'm|call me)\\s+([a-zA-Z][a-zA-Z'\\-\\s]{1,${MAX_NAME_CAPTURE}})\\b`, 'i'));
+    const match = text.match(NAME_PATTERN);
     if (!match) return;
     const name = _fmtName(match[1]);
     if (name) Prefs.set(NAME_KEY, name);
@@ -384,7 +389,8 @@ const Convo = (() => {
   function init() {
     _msgs = Hist.load();
     if (!_name()) {
-      for (const msg of _msgs) {
+      const recentMsgs = _msgs.slice(-50);
+      for (const msg of recentMsgs) {
         if (msg.role === 'user') {
           _maybeStoreName(msg.text || '');
           if (_name()) break;
@@ -779,6 +785,3 @@ if (document.readyState === 'loading') {
 } else {
   bootApp();
 }
-  function _timeGreeting(hour = new Date().getHours()) {
-    return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
-  }
