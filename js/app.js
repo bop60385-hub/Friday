@@ -49,10 +49,13 @@ const esc  = s  => String(s).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 const tsNow = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+const APP_SCRIPT_PATH = '/js/app.js';
+const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const APP_ROOT = (() => {
-  const { pathname } = window.location;
-  if (!pathname || pathname === '/') return '';
-  return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname.replace(/\/[^/]*$/, '');
+  const currentScript = document.currentScript?.src || new URL(APP_SCRIPT_PATH, window.location.href).toString();
+  const scriptPath = new URL(currentScript, window.location.href).pathname;
+  const rawRoot = scriptPath.replace(new RegExp(`${escapeRegExp(APP_SCRIPT_PATH)}$`), '').replace(/\/$/, '');
+  return rawRoot === '/' ? '' : rawRoot;
 })();
 const withRoot = path => `${APP_ROOT}${path.startsWith('/') ? path : `/${path}`}`;
 const log   = (level, scope, message, meta) => {
@@ -224,7 +227,7 @@ const VoiceEngine = (() => {
     } catch (err) {
       log('warn', 'voice', 'SpeechRecognition failed to start.', err?.message || err);
       _isListening = false;
-      Toast.show('Microphone access failed. Please allow microphone permissions or use typed input.', 'warn');
+      Toast.show('Voice input is unavailable right now. Please use typed input.', 'warn');
       return false;
     }
   }
