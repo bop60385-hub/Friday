@@ -52,6 +52,7 @@ const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
 const APP_SCRIPT_PATH = '/js/app.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const PersonalityEngine = window.FridayPersonalityEngine || null;
+const defaultReply = () => PersonalityEngine?.defaultResponse?.() || 'Understood. I am ready to assist.';
 const APP_ROOT = (() => {
   const currentScript = document.currentScript?.src ||
     document.querySelector(`script[src$="${APP_SCRIPT_PATH}"]`)?.src ||
@@ -342,8 +343,7 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = PersonalityEngine?.respond(text) ||
-        "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.";
+      const reply = PersonalityEngine?.respond(text) || defaultReply();
       _addMsg('ai', reply);
       PersonalityEngine?.rememberConversation(text, reply);
       VoiceEngine.speak(reply);

@@ -3,8 +3,11 @@
 (() => {
   const STORAGE_MEMORY = 'friday_user_memory';
   const STORAGE_PERSONALITY = 'friday_personality';
+  // Keep memory small enough for localStorage while preserving recent context.
   const MAX_CONVERSATION_HISTORY = 120;
+  // Track only high-signal recurring topics for lightweight personalization.
   const MAX_PREFERRED_TOPICS = 30;
+  const MIN_TOPIC_WORD_LENGTH = 4;
 
   const PERSONALITIES = {
     professionalBritish: {
@@ -154,7 +157,7 @@
         user: String(userText || ''),
         ai: String(aiText || ''),
       });
-      const words = String(userText || '').toLowerCase().match(/[a-z]{4,}/g) || [];
+      const words = String(userText || '').toLowerCase().match(new RegExp(`[a-z]{${MIN_TOPIC_WORD_LENGTH},}`, 'g')) || [];
       const preferredTopics = [...new Set([...(memory.preferredTopics || []), ...words])]
         .slice(-MAX_PREFERRED_TOPICS);
       this.setMemory({ conversationHistory, preferredTopics });
@@ -173,8 +176,12 @@
       return `Good afternoon, ${memory.userName}. How may I assist you today?`;
     },
 
+    defaultResponse() {
+      return "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.";
+    },
+
     respond(userText) {
-      const providedName = String(userText || '').match(/\bmy name is\s+([a-z][a-z\-']{1,30})\b/i)?.[1];
+      const providedName = String(userText || '').match(/\bmy name is\s+([a-zA-Z][a-zA-Z\-']{1,30})\b/i)?.[1];
       if (providedName) this.rememberUserName(providedName.charAt(0).toUpperCase() + providedName.slice(1));
       const intent = inferIntent(userText);
       const profile = this.getProfile();
@@ -189,7 +196,7 @@
       if (intent === 'support') return `Understood, ${memory.userName}. Let's take this one step at a time. I recommend we focus on the highest-impact action first.`;
       if (intent === 'empty') return 'Ready when you are.';
 
-      return "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.";
+      return this.defaultResponse();
     },
   };
 
