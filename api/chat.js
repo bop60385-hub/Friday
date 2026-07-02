@@ -75,7 +75,10 @@ module.exports = async function handler(req, res) {
     });
 
     if (!openAIResponse.ok) {
-      const errorPayload = await openAIResponse.json().catch(() => ({}));
+      const errorPayload = await openAIResponse.json().catch((error) => {
+        console.error('Failed to parse OpenAI error response:', error?.name || 'Error');
+        return {};
+      });
       const errorType = errorPayload?.error?.type;
       const errorMessage = getOpenAIErrorMessage(openAIResponse.status, errorType);
       return res.status(openAIResponse.status).json({ error: errorMessage });
@@ -93,8 +96,8 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({ response: responseText });
-  } catch {
-    console.error('OpenAI chat endpoint error');
+  } catch (error) {
+    console.error('OpenAI chat endpoint error:', error?.name || 'Error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
