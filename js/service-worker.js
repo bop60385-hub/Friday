@@ -23,6 +23,7 @@ const PRECACHE_ASSETS = [
   withRoot('/'),
   withRoot('/index.html'),
   withRoot('/css/style.css'),
+  withRoot('/js/memory.js'),
   withRoot('/js/app.js'),
   withRoot('/manifest.webmanifest'),
   withRoot('/icons/icon-192.png'),

@@ -313,9 +313,14 @@ const Convo = (() => {
   const _convList = $('conv-list');
 
   function _greet() {
-    const h = new Date().getHours();
+    const h   = new Date().getHours();
     const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+    const name = typeof Memory !== 'undefined' ? Memory.get('userName', '') : '';
+    const personalised = typeof Memory !== 'undefined' ? Memory.getPersonalisedGreeting() : '';
+    const greeting = `${sal}${name ? ', ' + name : ''}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared.`;
+    return personalised
+      ? `${greeting} ${personalised} How can I assist you today?`
+      : `${greeting} How can I assist you today?`;
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -367,10 +372,16 @@ const Convo = (() => {
     const inp = $('conv-input');
     if (inp) inp.value = '';
     _addMsg('user', text);
+    if (typeof Memory !== 'undefined') Memory.learnFromMessage(text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
+      let reply = REPLIES[_demoIdx % REPLIES.length];
       _demoIdx++;
+      /* Occasionally surface a memory recall after the primary reply */
+      if (typeof Memory !== 'undefined' && _demoIdx % 3 === 0) {
+        const recall = Memory.getRandomRecall();
+        if (recall) reply += ` ${recall}`;
+      }
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
@@ -606,6 +617,44 @@ const Settings = (() => {
     /* Clear history */
     $('setting-clear-history')?.addEventListener('click', () => {
       if (confirm('Clear all conversation history?')) { Convo.clearHistory(); close(); }
+    });
+
+    /* Memory — name */
+    const nameEl = $('setting-username');
+    if (nameEl) {
+      nameEl.value = typeof Memory !== 'undefined' ? Memory.get('userName', '') : '';
+      nameEl.addEventListener('change', e => { if (typeof Memory !== 'undefined') Memory.set('userName', e.target.value.trim()); });
+    }
+
+    /* Memory — location */
+    const locationEl = $('setting-location');
+    if (locationEl) {
+      locationEl.value = typeof Memory !== 'undefined' ? Memory.get('location', '') : '';
+      locationEl.addEventListener('change', e => { if (typeof Memory !== 'undefined') Memory.set('location', e.target.value.trim()); });
+    }
+
+    /* Memory — favourite topics */
+    const topicsEl = $('setting-topics');
+    if (topicsEl) {
+      if (typeof Memory !== 'undefined') topicsEl.value = Memory.get('favoriteTopics', []).join(', ');
+      topicsEl.addEventListener('change', e => {
+        if (typeof Memory !== 'undefined') {
+          const topics = e.target.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+          Memory.set('favoriteTopics', topics);
+        }
+      });
+    }
+
+    /* Memory — clear */
+    $('setting-clear-memory')?.addEventListener('click', () => {
+      if (confirm('Clear all stored memory (name, location, topics, interests)?')) {
+        if (typeof Memory !== 'undefined') Memory.clear();
+        if (nameEl)     nameEl.value    = '';
+        if (locationEl) locationEl.value = '';
+        if (topicsEl)   topicsEl.value   = '';
+        Toast.show('Memory cleared.', 'info');
+        close();
+      }
     });
 
     /* Temperature units */

@@ -428,6 +428,28 @@
       <button class="settings-btn" id="setting-refresh-weather">↻ Update Location</button>
     </section>
 
+    <!-- Memory -->
+    <section class="settings-section">
+      <div class="settings-section-label">Memory</div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-username">Your name</label>
+        <input type="text" id="setting-username" class="settings-input" placeholder="e.g. Alex" autocomplete="off" />
+      </div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-location">Your location</label>
+        <input type="text" id="setting-location" class="settings-input" placeholder="e.g. London" autocomplete="off" />
+      </div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-topics">Favourite topics <span style="color:var(--text-secondary);font-size:0.7rem">(comma-separated)</span></label>
+        <input type="text" id="setting-topics" class="settings-input" placeholder="e.g. AI, finance, technology" autocomplete="off" />
+      </div>
+
+      <button class="settings-btn settings-btn-danger" id="setting-clear-memory">🗑 Clear Memory</button>
+    </section>
+
     <!-- Data -->
     <section class="settings-section">
       <div class="settings-section-label">Data</div>
@@ -437,6 +459,7 @@
   </div>
 </aside>
 
+<script src="js/memory.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
