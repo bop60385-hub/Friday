@@ -454,17 +454,17 @@ const Weather = (() => {
 
   async function _resolveManualLocation(city, state, zip) {
     const query = [city, state, zip]
-      .map(value => value.replace(/[^\w\s,\-'.]/g, '').trim())
+      .map(value => value.replace(/[^\w\s,\-]/g, '').trim())
       .filter(Boolean)
       .join(', ');
     if (!query) throw new Error('At least one location field is required.');
-    if (query.length > 120) throw new Error('Location is too long. Use a shorter value.');
+    if (query.length > 120) throw new Error('Location must be 120 characters or less.');
     const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Manual location lookup failed with status ${res.status}.`);
+    if (!res.ok) throw new Error('Unable to verify location. Please try again.');
     const data = await res.json();
     const match = data.results?.[0];
-    if (!match) throw new Error(`Location not found for query: ${query}`);
+    if (!match) throw new Error('Location not found. Please check your entry and try again.');
     return match;
   }
 
@@ -488,7 +488,7 @@ const Weather = (() => {
   }
 
   async function _saveAndApplyManualLocation(city, state, zip) {
-    const hasUserCity = Boolean(city);
+    const userProvidedCity = Boolean(city);
     const resolved = await _resolveManualLocation(city, state, zip);
     const lat = resolved.latitude;
     const lon = resolved.longitude;
@@ -500,11 +500,13 @@ const Weather = (() => {
     Prefs.set('wState', state);
     Prefs.set('wZip', zip);
     Prefs.set('wLocationLabel', manualLabel);
-    try {
-      const reverseCity = await _fetchCity(lat, lon);
-      if (reverseCity && !hasUserCity) Prefs.set('wCity', reverseCity);
-    } catch (err) {
-      log('warn', 'weather', 'Reverse geocode lookup failed for manual location.', err);
+    if (!userProvidedCity) {
+      try {
+        const reverseCity = await _fetchCity(lat, lon);
+        if (reverseCity) Prefs.set('wCity', reverseCity);
+      } catch (err) {
+        log('warn', 'weather', 'Reverse geocode lookup failed for manual location.', err);
+      }
     }
     await _fetchAndRenderWeather(lat, lon, manualLabel);
     Toast.show('Location saved. Weather services online.', 'info');
@@ -541,7 +543,8 @@ const Weather = (() => {
     try {
       await _fetchAndRenderWeather(coords.lat, coords.lon);
       Toast.show('Weather refreshed.', 'info');
-    } catch {
+    } catch (err) {
+      log('warn', 'weather', 'Weather refresh failed.', err);
       Toast.show('Could not fetch weather data.', 'warn');
     }
   }
