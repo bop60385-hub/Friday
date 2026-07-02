@@ -12,6 +12,7 @@ const STORAGE_HIST  = 'friday_history';
 const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
+const GEOCODE_SEARCH_API = 'https://geocoding-api.open-meteo.com/v1/search';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
@@ -283,18 +284,90 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
+  let _lastReply = '';
 
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
+  /* Intent → reply map */
+  const INTENTS = [
+    {
+      patterns: [/what(?:'s| is) your name/i, /\bwho are you\b/i, /\byour name\b/i],
+      replies: [
+        "I'm Friday — your personal intelligence assistant. I was built to keep you briefed, focused, and ahead of the curve.",
+        "My name is Friday. I'm your AI-powered intelligence dashboard, here to brief, analyse, and assist.",
+      ],
+    },
+    {
+      patterns: [/\bgood morning\b/i],
+      replies: [
+        "Good morning! Your daily briefing is ready. Markets are active and your opportunity pipeline has updates. Where shall we start?",
+        "Good morning. Systems are online. I've prepared your briefing — shall I run through it?",
+      ],
+    },
+    {
+      patterns: [/\bgood evening\b/i],
+      replies: [
+        "Good evening. I've been monitoring your sectors all day. A few notable developments — shall I summarise?",
+        "Good evening. Ready to review the day's intelligence? I have a summary prepared.",
+      ],
+    },
+    {
+      patterns: [/what can you do/i, /your (?:capabilities|features|abilities)/i, /\bhow can you help\b/i],
+      replies: [
+        "I can monitor markets and news, track business opportunities, provide weather updates, read your briefing aloud, and hold intelligent conversations. I'm also learning your preferences over time.",
+        "Running in local mode, I can: read your daily briefing, provide weather, track news headlines, scan for opportunities, and respond to your questions. Advanced AI activates once connected.",
+      ],
+    },
+    {
+      patterns: [/\bweather\b/i, /\btemperature\b/i, /\bforecast\b/i, /\brain\b|\bsunny\b|\bcloudy\b/i],
+      replies: [
+        "Check the Weather panel on the right — I've pulled in the latest conditions for your location. Would you like me to read it out?",
+        "Weather data is live in the right-hand panel. You can set your location manually using the ⌖ Location button if GPS isn't available.",
+      ],
+    },
+    {
+      patterns: [/\bnews\b/i, /\bheadlines\b/i, /what'?s happening/i, /\blatest\b/i],
+      replies: [
+        "The News Intelligence panel shows the latest headlines — AI sector movement and fintech funding are prominent today. Shall I read the top story?",
+        "Your news feed is active in the right panel. I'm monitoring AI, finance, tech, and UK sectors. Anything specific you'd like me to focus on?",
+      ],
+    },
+    {
+      patterns: [/\bopportunit/i, /\bscan\b/i, /\bpipeline\b/i, /\bgrant\b/i],
+      replies: [
+        "The Opportunity Scanner is running — monitoring 12 sectors and 340+ signals. I've flagged a high-priority funding window and a new partnership lead. Shall I walk you through them?",
+        "Your opportunity pipeline has new entries. The scanner identified a grant closing in 48 hours and an emerging partnership signal. Want the full briefing?",
+      ],
+    },
+    {
+      patterns: [/\bthank(?:s| you)\b/i, /\bcheers\b/i],
+      replies: [
+        "You're welcome. I'm here whenever you need me.",
+        "Of course — that's what I'm here for.",
+        "Always happy to help. Just say the word.",
+      ],
+    },
   ];
+
+  const DEFAULT_REPLIES = [
+    "I'm still running in local mode. Advanced AI connection is not active yet.",
+    "I didn't quite catch that. I'm in local mode — Advanced AI connection is not active yet.",
+  ];
+
+  function _pickReply(candidates) {
+    /* Filter out the last reply to prevent immediate repetition */
+    const filtered = candidates.filter(r => r !== _lastReply);
+    const pool = filtered.length ? filtered : candidates;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function _getReply(text) {
+    const t = text.trim();
+    for (const intent of INTENTS) {
+      if (intent.patterns.some(p => p.test(t))) {
+        return _pickReply(intent.replies);
+      }
+    }
+    return _pickReply(DEFAULT_REPLIES);
+  }
 
   const _convList = $('conv-list');
 
@@ -336,6 +409,9 @@ const Convo = (() => {
       _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
       Hist.save(_msgs);
     }
+    /* Seed _lastReply from stored history so we don't repeat on first response */
+    const lastAI = [..._msgs].reverse().find(m => m.role === 'ai');
+    if (lastAI) _lastReply = lastAI.text;
     if (_convList) {
       _convList.innerHTML = '';
       _msgs.forEach(m => _renderMsg(m, false));
@@ -355,15 +431,16 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = _getReply(text);
+      _lastReply = reply;
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
-    }, 800 + Math.random() * 600);
+    }, 600 + Math.random() * 500);
   }
 
   function clearHistory() {
     _msgs = [];
+    _lastReply = '';
     Hist.clear();
     if (_convList) _convList.innerHTML = '';
     _addMsg('ai', _greet());
@@ -408,23 +485,122 @@ const Weather = (() => {
     if (badge)   { badge.textContent = 'Live'; badge.className = 'panel-badge live'; badge.id = 'weather-badge'; }
   }
 
-  async function requestLocation() {
-    if (!navigator.geolocation) { Toast.show('Geolocation not available.', 'warn'); return; }
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const { latitude: lat, longitude: lon } = pos.coords;
-      Prefs.set('wLat', lat); Prefs.set('wLon', lon);
-      try {
-        const [data, city] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
-        if (city) Prefs.set('wCity', city);
-        const c = data.current;
-        _updateUI(c.temperature_2m, c.weathercode, city);
-        Toast.show(`Weather updated — ${city || 'your location'}`, 'info');
-      } catch { Toast.show('Could not fetch weather data.', 'warn'); }
-    }, () => Toast.show('Location access denied.', 'warn'));
+  /* ── Location Modal ─────────────────────────────────────────── */
+  function openModal() {
+    const overlay = $('loc-modal-overlay');
+    const modal   = $('loc-modal');
+    const status  = $('loc-modal-status');
+    const input   = $('loc-input');
+    if (!modal || !overlay) return;
+    if (status) { status.textContent = ''; status.className = 'loc-modal-status'; }
+    if (input)  { input.value = Prefs.get('wCity', ''); }
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => input?.focus(), 80);
   }
 
+  function closeModal() {
+    const overlay = $('loc-modal-overlay');
+    const modal   = $('loc-modal');
+    overlay?.classList.add('hidden');
+    overlay?.setAttribute('aria-hidden', 'true');
+    modal?.classList.add('hidden');
+    modal?.setAttribute('aria-hidden', 'true');
+  }
+
+  async function _geocodeQuery(query) {
+    const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const result = d.results && d.results[0];
+    if (!result) throw new Error('Location not found');
+    return {
+      lat:  result.latitude,
+      lon:  result.longitude,
+      city: [result.name, result.admin1, result.country_code].filter(Boolean).join(', '),
+    };
+  }
+
+  async function _applyLocation(lat, lon, city) {
+    Prefs.set('wLat', lat);
+    Prefs.set('wLon', lon);
+    if (city) Prefs.set('wCity', city);
+    const data = await _fetchWeather(lat, lon);
+    const c = data.current;
+    _updateUI(c.temperature_2m, c.weathercode, city || Prefs.get('wCity', ''));
+    Toast.show(`Weather updated — ${city || 'your location'}`, 'info');
+  }
+
+  async function _handleManualSubmit() {
+    const input  = $('loc-input');
+    const status = $('loc-modal-status');
+    const btn    = $('loc-modal-submit');
+    const query  = input?.value.trim();
+    if (!query) return;
+
+    if (status) { status.textContent = 'Searching…'; status.className = 'loc-modal-status'; }
+    if (btn)    btn.disabled = true;
+
+    try {
+      const { lat, lon, city } = await _geocodeQuery(query);
+      await _applyLocation(lat, lon, city);
+      closeModal();
+    } catch {
+      if (status) { status.textContent = 'Location not found. Try a different city or ZIP code.'; status.className = 'loc-modal-status error'; }
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function requestGPS() {
+    if (!navigator.geolocation) {
+      Toast.show('Geolocation not available in this browser.', 'warn');
+      return;
+    }
+    const status = $('loc-modal-status');
+    const btn    = $('loc-gps-btn');
+    if (status) { status.textContent = 'Requesting GPS…'; status.className = 'loc-modal-status'; }
+    if (btn)    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        try {
+          const [data, city] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
+          await _applyLocation(lat, lon, city || '');
+          closeModal();
+        } catch {
+          Toast.show('Could not fetch weather data.', 'warn');
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      },
+      () => {
+        if (status) { status.textContent = 'GPS access denied. Please enter your location manually above.'; status.className = 'loc-modal-status error'; }
+        if (btn)    btn.disabled = false;
+      }
+    );
+  }
+
+  /* Legacy public entry (called from Settings "Change Location") */
+  function requestLocation() { openModal(); }
+
   async function init() {
-    document.querySelector('.weather-connect')?.addEventListener('click', requestLocation);
+    /* Wire Connect button in weather panel → open modal */
+    document.querySelector('.weather-connect')?.addEventListener('click', openModal);
+    /* Wire "⌖ Location" button in panel header */
+    $('weather-change-loc')?.addEventListener('click', openModal);
+
+    /* Wire modal controls */
+    $('loc-modal-close')?.addEventListener('click', closeModal);
+    $('loc-modal-overlay')?.addEventListener('click', closeModal);
+    $('loc-modal-submit')?.addEventListener('click', _handleManualSubmit);
+    $('loc-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') _handleManualSubmit(); });
+    $('loc-gps-btn')?.addEventListener('click', requestGPS);
+
+    /* Load from saved prefs */
     const lat = Prefs.get('wLat', null), lon = Prefs.get('wLon', null);
     if (lat && lon) {
       try {
