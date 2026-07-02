@@ -547,7 +547,8 @@ const Weather = (() => {
       const { lat, lon, city } = await _geocodeQuery(query);
       await _applyLocation(lat, lon, city);
       closeModal();
-    } catch {
+    } catch (err) {
+      log('warn', 'weather', 'Geocode query failed.', err?.message || err);
       if (status) { status.textContent = 'Location not found. Try a different city or ZIP code.'; status.className = 'loc-modal-status error'; }
     } finally {
       if (btn) btn.disabled = false;
@@ -571,7 +572,8 @@ const Weather = (() => {
           const [data, city] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
           await _applyLocation(lat, lon, city || '');
           closeModal();
-        } catch {
+        } catch (err) {
+          log('warn', 'weather', 'GPS weather fetch failed.', err?.message || err);
           Toast.show('Could not fetch weather data.', 'warn');
         } finally {
           if (btn) btn.disabled = false;
