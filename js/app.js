@@ -492,14 +492,61 @@ const NewsWidget = (() => {
 
 /* ── Daily Briefing ──────────────────────────────────────────── */
 function initBriefing() {
-  const el = $('briefing-time');
-  if (el) {
-    const d = new Date();
-    el.textContent = `Generated ${pad(d.getHours())}:${pad(d.getMinutes())} local`;
+  const quotes = [
+    '“Success is the sum of small efforts, repeated day in and day out.”',
+    '“Discipline is choosing between what you want now and what you want most.”',
+    '“Small daily improvements are the key to staggering long-term results.”',
+    '“The future depends on what you do today.”',
+    '“Consistency compounds faster than intensity.”',
+  ];
+  const quoteIndex = Math.floor(Date.now() / 86400000) % quotes.length;
+  const quoteToday = quotes[quoteIndex];
+  const intro = $('briefing-intro');
+  if (intro) intro.textContent = 'Good morning, Benny. Here is your daily briefing.';
+
+  function _set(id, text) {
+    const el = $(id);
+    if (el) el.textContent = text;
   }
+
+  function _render() {
+    const d = new Date();
+    _set('briefing-time', `Generated ${pad(d.getHours())}:${pad(d.getMinutes())} local`);
+    _set('briefing-current-time', $('clock-time')?.textContent || `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`);
+    _set('briefing-date', $('clock-date')?.textContent || d.toDateString());
+
+    const weatherTemp = document.querySelector('.weather-temp')?.textContent?.trim() || '— °C';
+    const weatherDesc = document.querySelector('.weather-desc')?.textContent?.trim() || 'Waiting for weather data';
+    _set('briefing-weather', `${weatherTemp} · ${weatherDesc}`);
+
+    const headlineNodes = Array.from(document.querySelectorAll('.news-item-title'));
+    const headlines = headlineNodes.map(n => n.textContent?.trim()).filter(Boolean).slice(0, 3);
+    _set('briefing-headlines', headlines.length ? headlines.join(' | ') : 'No headlines available right now');
+
+    _set('briefing-quote', quoteToday);
+
+    const cpu = $('metric-cpu')?.textContent?.trim() || '—';
+    const mem = $('metric-mem')?.textContent?.trim() || '—';
+    const net = $('metric-net')?.textContent?.trim() || '—';
+    const ai  = $('metric-ai')?.textContent?.trim() || '—';
+    const uptime = $('uptime')?.textContent?.trim() || '00:00:00';
+    _set('briefing-system-status', `CPU ${cpu} · Memory ${mem} · Latency ${net} · AI Load ${ai} · Uptime ${uptime}`);
+  }
+
+  _render();
+  setInterval(_render, 30000);
+
   $('briefing-speak')?.addEventListener('click', () => {
-    const intro = document.querySelector('.briefing-intro')?.textContent?.trim() || '';
-    if (intro) VoiceEngine.speak(intro);
+    const parts = [
+      $('briefing-intro')?.textContent?.trim(),
+      `Current time: ${$('briefing-current-time')?.textContent?.trim() || ''}`,
+      `Date: ${$('briefing-date')?.textContent?.trim() || ''}`,
+      `Weather: ${$('briefing-weather')?.textContent?.trim() || ''}`,
+      `Top headlines: ${$('briefing-headlines')?.textContent?.trim() || ''}`,
+      `Daily quote: ${$('briefing-quote')?.textContent?.trim() || ''}`,
+      `System status: ${$('briefing-system-status')?.textContent?.trim() || ''}`,
+    ].filter(Boolean);
+    if (parts.length) VoiceEngine.speak(parts.join(' '));
   });
 }
 

@@ -177,42 +177,55 @@
           </div>
         </div>
         <div class="panel-body">
-          <p class="briefing-intro">
-            Good day. Here is your intelligence summary for today. Three high-priority
-            items require your attention. AI markets are trending positive.
-            Your opportunity pipeline has two new entries overnight.
+          <p class="briefing-intro" id="briefing-intro">
+            Good morning, Benny. Here is your daily briefing.
           </p>
           <div class="briefing-items">
-
             <div class="briefing-item priority-high">
-              <div class="briefing-item-icon">🔺</div>
+              <div class="briefing-item-icon">⏰</div>
               <div class="briefing-item-body">
-                <div class="briefing-item-title">Funding window closes in 48h</div>
-                <div class="briefing-item-sub">Innovate UK · AI &amp; Productivity Grant — up to £250,000</div>
+                <div class="briefing-item-title">Current Time</div>
+                <div class="briefing-item-sub" id="briefing-current-time">--:--:--</div>
               </div>
             </div>
 
             <div class="briefing-item priority-med">
-              <div class="briefing-item-icon">📈</div>
+              <div class="briefing-item-icon">📅</div>
               <div class="briefing-item-body">
-                <div class="briefing-item-title">AI sector up 2.1% overnight</div>
-                <div class="briefing-item-sub">NVDA +1.8% · MSFT +2.3% · GOOG +1.1% — watchlist active</div>
+                <div class="briefing-item-title">Date</div>
+                <div class="briefing-item-sub" id="briefing-date">Loading…</div>
               </div>
             </div>
 
             <div class="briefing-item priority-green">
-              <div class="briefing-item-icon">🤝</div>
+              <div class="briefing-item-icon">⛅</div>
               <div class="briefing-item-body">
-                <div class="briefing-item-title">New partnership lead identified</div>
-                <div class="briefing-item-sub">Potential collaboration flagged via LinkedIn signal · Relevance: 91%</div>
+                <div class="briefing-item-title">Weather</div>
+                <div class="briefing-item-sub" id="briefing-weather">Waiting for weather data</div>
               </div>
             </div>
 
             <div class="briefing-item priority-low">
-              <div class="briefing-item-icon">📋</div>
+              <div class="briefing-item-icon">📰</div>
               <div class="briefing-item-body">
-                <div class="briefing-item-title">3 research reports ready to review</div>
-                <div class="briefing-item-sub">Market trends · Competitor analysis · Weekly digest</div>
+                <div class="briefing-item-title">Top Headlines</div>
+                <div class="briefing-item-sub" id="briefing-headlines">Loading headlines…</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-low">
+              <div class="briefing-item-icon">💬</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">Daily Quote</div>
+                <div class="briefing-item-sub" id="briefing-quote">“Focus on progress, not perfection.”</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-green">
+              <div class="briefing-item-icon">🖥️</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">System Status</div>
+                <div class="briefing-item-sub" id="briefing-system-status">Collecting system metrics…</div>
               </div>
             </div>
 
