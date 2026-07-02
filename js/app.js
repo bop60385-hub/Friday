@@ -283,25 +283,71 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
+  const NAME_KEY = 'userName';
 
   const _convList = $('conv-list');
+
+  function _fmtName(name) {
+    const clean = String(name || '').trim().replace(/[^a-zA-Z'\-]/g, '');
+    if (!clean) return '';
+    return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+  }
+
+  function _name() {
+    return _fmtName(Prefs.get(NAME_KEY, ''));
+  }
+
+  function _maybeStoreName(text) {
+    const match = text.match(/\b(?:my name is|i am|i'm|call me|it'?s)\s+([a-zA-Z][a-zA-Z'\-]{1,30})\b/i);
+    if (!match) return;
+    const name = _fmtName(match[1]);
+    if (name) Prefs.set(NAME_KEY, name);
+  }
+
+  function _resolveReply(text) {
+    const input = text.trim();
+    const name = _name();
+    const nameSuffix = name ? `, ${name}` : '';
+
+    if (/\b(hello|hi|hey|good morning|good afternoon|good evening)\b/i.test(input)) {
+      return `Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}${nameSuffix}. Systems online.`;
+    }
+    if (/\b(how are you|how do you feel|are you okay)\b/i.test(input)) {
+      return 'Operating normally and ready to assist.';
+    }
+    if (/\b(what do you think|your assessment|assess this|opinion)\b/i.test(input)) {
+      return 'Based on the information available, here is my assessment.';
+    }
+    if (/\b(thank you|thanks|cheers)\b/i.test(input)) {
+      return "You're very welcome.";
+    }
+    if (/\b(good night|night|sleep)\b/i.test(input)) {
+      return `Sleep well${name ? `, ${name}` : ''}. I'll be here when you need me.`;
+    }
+    if (/\b(struggling|overwhelmed|stressed|difficult|hard time|anxious|worried|panic|failed)\b/i.test(input)) {
+      return `I understand${nameSuffix}. We'll take this one step at a time. You're not handling this alone.`;
+    }
+    if (/\b(news|finance|market|stocks?|economy|inflation|interest rates?|geopolitics|world events?|war)\b/i.test(input)) {
+      return 'Understood. I will keep this analytical and concise: key signal, likely impact, and practical options.';
+    }
+    if (/\b(recommend|suggest|what should i do|best option|next step)\b/i.test(input)) {
+      return 'My recommendation is to prioritise the highest-impact option first, then review risk before committing.';
+    }
+    if (/\b(guarantee|certain|exactly|for sure|definitely)\b/i.test(input)) {
+      return "I can't be fully certain with current information, but I can give you the most likely outcome and risk range.";
+    }
+    if (/\b(who am i|what is my name)\b/i.test(input) && name) {
+      return `You're ${name}.`;
+    }
+
+    return `Understood${nameSuffix}. Share a bit more context and I'll provide a focused recommendation.`;
+  }
 
   function _greet() {
     const h = new Date().getHours();
     const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+    const name = _name();
+    return `${sal}${name ? `, ${name}` : ''}. Systems online. How can I assist?`;
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -332,6 +378,11 @@ const Convo = (() => {
 
   function init() {
     _msgs = Hist.load();
+    if (!_name()) {
+      for (const msg of _msgs) {
+        if (msg.role === 'user') _maybeStoreName(msg.text || '');
+      }
+    }
     if (_msgs.length === 0) {
       _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
       Hist.save(_msgs);
@@ -352,11 +403,11 @@ const Convo = (() => {
     if (!text.trim()) return;
     const inp = $('conv-input');
     if (inp) inp.value = '';
+    _maybeStoreName(text);
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = _resolveReply(text);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
