@@ -8,7 +8,7 @@
   // Track only high-signal recurring topics for lightweight personalization.
   const MAX_PREFERRED_TOPICS = 30;
   const MIN_TOPIC_WORD_LENGTH = 4;
-  const TOPIC_WORD_REGEX = new RegExp(`[a-z]{${MIN_TOPIC_WORD_LENGTH},}`, 'g');
+  const TOPIC_WORD_REGEX = new RegExp(`[a-zA-Z]{${MIN_TOPIC_WORD_LENGTH},}`, 'g');
   const NAME_CAPTURE_REGEX = /\bmy name is\s+([a-zA-Z][a-zA-Z\-']{1,30})\b/i;
   const TOPIC_STOP_WORDS = new Set([
     'this', 'that', 'from', 'with', 'have', 'will', 'would', 'could', 'should', 'there',
@@ -37,6 +37,7 @@
         thanks: "You're very welcome.",
         goodnight: "Sleep well, {name}. I'll remain on standby.",
         assessment: 'Based on the available information, here is my assessment.',
+        general: "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.",
       },
       rules: {
         avoid: ['robotic', 'overly emotional', 'childish', 'sarcastic', 'excessively verbose'],
@@ -185,7 +186,7 @@
     },
 
     defaultResponse() {
-      return "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.";
+      return this.getProfile().examples.general;
     },
 
     respond(userText) {
