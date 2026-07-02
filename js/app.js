@@ -491,6 +491,7 @@ const NewsWidget = (() => {
 })();
 
 /* ── Daily Briefing ──────────────────────────────────────────── */
+let briefingRefreshTimer = null;
 function initBriefing() {
   const quotes = [
     '“Success is the sum of small efforts, repeated day in and day out.”',
@@ -499,7 +500,9 @@ function initBriefing() {
     '“The future depends on what you do today.”',
     '“Consistency compounds faster than intensity.”',
   ];
-  const quoteIndex = Math.floor(Date.now() / 86400000) % quotes.length;
+  const today = new Date();
+  const localDayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const quoteIndex = Math.floor(localDayStart / 86400000) % quotes.length;
   const quoteToday = quotes[quoteIndex];
   const intro = $('briefing-intro');
   if (intro) intro.textContent = 'Good morning, Benny. Here is your daily briefing.';
@@ -534,7 +537,8 @@ function initBriefing() {
   }
 
   _render();
-  setInterval(_render, 30000);
+  if (briefingRefreshTimer) clearInterval(briefingRefreshTimer);
+  briefingRefreshTimer = setInterval(_render, 30000);
 
   $('briefing-speak')?.addEventListener('click', () => {
     const parts = [
