@@ -303,19 +303,8 @@ const VoiceEngine = (() => {
 
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
-  let _msgs    = [];
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
+  let _msgs = [];
+  const UNKNOWN_REPLY = "I'm still learning. AI integration is coming soon.";
 
   const _convList = $('conv-list');
 
@@ -351,6 +340,39 @@ const Convo = (() => {
     return msg;
   }
 
+  function _normalizeInput(text) {
+    return text.toLowerCase().replace(/[^\w\s']/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function _resolveReply(text) {
+    const normalized = _normalizeInput(text);
+    if (["what's your name", 'what is your name'].includes(normalized)) {
+      return "I'm Friday.";
+    }
+    if (normalized === 'who are you') {
+      return "I'm Friday, your personal intelligence assistant.";
+    }
+    if (normalized === 'who created you') {
+      return 'I was created by the Friday team to assist you.';
+    }
+    if (normalized === 'what can you do') {
+      return 'I can help with conversation, voice responses, daily briefings, weather, and news updates.';
+    }
+    if (normalized === 'tell me about yourself') {
+      return "I'm Friday, an AI-powered personal intelligence assistant designed to help you stay informed and productive.";
+    }
+    if (normalized === 'good morning') {
+      return 'Good morning. I’m Friday, ready to assist you.';
+    }
+    if (normalized === 'good evening') {
+      return 'Good evening. I’m Friday, here whenever you need me.';
+    }
+    if (normalized === 'thank you' || normalized === 'thanks') {
+      return "You're welcome.";
+    }
+    return UNKNOWN_REPLY;
+  }
+
   function init() {
     _msgs = Hist.load();
     if (_msgs.length === 0) {
@@ -376,8 +398,7 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = _resolveReply(text);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
