@@ -93,8 +93,8 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({ response: responseText });
-  } catch (error) {
-    console.error('OpenAI chat endpoint error:', error?.message || error);
+  } catch {
+    console.error('OpenAI chat endpoint error');
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
