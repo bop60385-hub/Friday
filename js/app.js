@@ -644,6 +644,7 @@ function initVoiceOrb() {
     log('info', 'voice', 'Voice orb initialized in fallback mode.');
   }
   orb.addEventListener('click', () => {
+    console.log('Orb clicked');
     if (!VoiceEngine.canListen) {
       Toast.show('Voice input is unavailable. Please use typed input.', 'warn');
       return;
@@ -665,7 +666,10 @@ function initConvInput() {
     });
     return;
   }
-  send?.addEventListener('click', () => { if (inp) Convo.handleInput(inp.value.trim()); });
+  send?.addEventListener('click', () => {
+    console.log('Send clicked');
+    if (inp) Convo.handleInput(inp.value.trim());
+  });
   inp?.addEventListener('keydown', e => { if (e.key === 'Enter') Convo.handleInput(inp.value.trim()); });
   mic?.addEventListener('click',  () => {
     if (!VoiceEngine.canListen) { Toast.show('Voice input is unavailable. Please use typed input.', 'warn'); return; }
@@ -682,7 +686,11 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ── Boot ────────────────────────────────────────────────────── */
+let hasBooted = false;
+
 function bootApp() {
+  if (hasBooted) return;
+  hasBooted = true;
   const steps = [
     ['conversation', () => Convo.init()],
     ['voice-orb', () => initVoiceOrb()],
@@ -703,10 +711,12 @@ function bootApp() {
       log('error', 'boot', `${name} failed to initialize.`, err);
     }
   });
+  console.log('Friday initialized');
 }
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bootApp, { once: true });
+  window.addEventListener('load', bootApp, { once: true });
 } else {
   bootApp();
 }

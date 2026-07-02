@@ -3,7 +3,7 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v3';
+const CACHE_NAME = 'friday-v4';
 const SERVICE_WORKER_PATH = '/js/service-worker.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const hasExpectedPath = self.location.pathname.endsWith(SERVICE_WORKER_PATH);
