@@ -501,8 +501,7 @@ function initBriefing() {
     '“Consistency compounds faster than intensity.”',
   ];
   const today = new Date();
-  const localDayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const quoteIndex = Math.floor(localDayStart / 86400000) % quotes.length;
+  const quoteIndex = ((today.getFullYear() * 372) + (today.getMonth() * 31) + today.getDate()) % quotes.length;
   const quoteToday = quotes[quoteIndex];
   const intro = $('briefing-intro');
   if (intro) intro.textContent = 'Good morning, Benny. Here is your daily briefing.';
@@ -536,9 +535,31 @@ function initBriefing() {
     _set('briefing-system-status', `CPU ${cpu} · Memory ${mem} · Latency ${net} · AI Load ${ai} · Uptime ${uptime}`);
   }
 
+  const startRefresh = () => {
+    if (briefingRefreshTimer) clearInterval(briefingRefreshTimer);
+    briefingRefreshTimer = setInterval(_render, 30000);
+  };
+  const stopRefresh = () => {
+    if (!briefingRefreshTimer) return;
+    clearInterval(briefingRefreshTimer);
+    briefingRefreshTimer = null;
+  };
+
   _render();
-  if (briefingRefreshTimer) clearInterval(briefingRefreshTimer);
-  briefingRefreshTimer = setInterval(_render, 30000);
+  startRefresh();
+
+  if (!initBriefing._lifecycleBound) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopRefresh();
+      } else {
+        _render();
+        startRefresh();
+      }
+    });
+    window.addEventListener('pagehide', stopRefresh);
+    initBriefing._lifecycleBound = true;
+  }
 
   $('briefing-speak')?.addEventListener('click', () => {
     const parts = [
