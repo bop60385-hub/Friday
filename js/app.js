@@ -527,6 +527,7 @@ function initBriefing() {
 /* ── Settings Panel ──────────────────────────────────────────── */
 const Settings = (() => {
   let hasPromptedVoiceSelection = false;
+  let lastVoiceInventory = '';
 
   function open()  { $('settings-panel')?.classList.add('open'); $('settings-overlay')?.classList.remove('hidden'); }
   function close() { $('settings-panel')?.classList.remove('open'); $('settings-overlay')?.classList.add('hidden'); }
@@ -540,14 +541,19 @@ const Settings = (() => {
       activeEl.textContent = active ? `${active.name} (${active.lang})` : 'No preferred en-GB female voice available';
     }
     if (inventoryEl) {
-      inventoryEl.textContent = voices.length
+      const inventoryText = voices.length
         ? voices.map(v => `${v.name} — ${v.lang}${v.default ? ' · default' : ''}`).join('\n')
         : 'No speechSynthesis voices detected.';
+      if (inventoryText !== lastVoiceInventory) {
+        inventoryEl.textContent = inventoryText;
+        lastVoiceInventory = inventoryText;
+      }
     }
   }
 
   function promptForManualVoiceIfNeeded(voices = VoiceEngine.voices) {
-    const hasSavedVoice = !!Prefs.get('voiceName', '') && voices.some(v => v.name === Prefs.get('voiceName', ''));
+    const savedVoiceName = Prefs.get('voiceName', '');
+    const hasSavedVoice = !!savedVoiceName && voices.some(v => v.name === savedVoiceName);
     const hasPreferred = VoiceEngine.hasPreferredBritishFemaleVoice();
     if (!hasSavedVoice && !hasPreferred && !hasPromptedVoiceSelection) {
       hasPromptedVoiceSelection = true;
