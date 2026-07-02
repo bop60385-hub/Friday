@@ -294,21 +294,396 @@ const VoiceEngine = (() => {
   };
 })();
 
+/* ── Conversation Engine ─────────────────────────────────────── */
+const Engine = (() => {
+
+  /* Return ", Name" when a user name is stored, otherwise empty string */
+  function _name() {
+    const n = (Prefs.get('userName', '') || '').trim();
+    return n ? `, ${n}` : '';
+  }
+
+  /* Intent definitions ─────────────────────────────────────── */
+  const INTENTS = [
+    {
+      id: 'identity',
+      patterns: [
+        /what(?:'s| is) your name/i,
+        /who are you\b/i,
+        /introduce yourself/i,
+        /what are you called/i,
+        /tell me about yourself/i,
+      ],
+      responses: [
+        "My name is Friday. I'm your personal intelligence assistant.",
+        "I'm Friday — your dedicated personal intelligence assistant. I'm here to help you analyse, plan, and act.",
+        "Friday. I'm your AI assistant, designed to keep you informed, organised, and one step ahead.",
+      ],
+      followUps: [
+        "Is there something specific I can help you with?",
+        "What would you like to explore first?",
+      ],
+    },
+    {
+      id: 'status',
+      patterns: [
+        /how are you\b/i,
+        /how(?:'re| are) you doing\b/i,
+        /you okay\b/i,
+        /how.*feeling/i,
+        /are you.*(?:working|running|online|up)\b/i,
+        /system status/i,
+      ],
+      responses: [
+        () => `All systems are operating normally${_name()}. How may I assist you today?`,
+        () => `Operating at full capacity${_name()}. Ready for your next task.`,
+        () => `All diagnostics nominal${_name()}. What can I help you with?`,
+        () => `Running smoothly${_name()}. I'm at your service.`,
+      ],
+    },
+    {
+      id: 'greeting',
+      patterns: [
+        /^(?:hi|hello|hey|greetings|howdy)\b/i,
+        /^good (?:morning|afternoon|evening)\b/i,
+        /^(?:hi|hello|hey) friday\b/i,
+      ],
+      responses: [
+        () => { const h = new Date().getHours(); const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; return `${sal}${_name()}. How can I assist you today?`; },
+        () => `Hello${_name()}. I'm ready when you are. What would you like to work on?`,
+        () => `Hi there${_name()}. Always good to hear from you. How can I help?`,
+      ],
+    },
+    {
+      id: 'farewell',
+      patterns: [
+        /^(?:bye|goodbye|see you|take care|goodnight|good night|farewell)\b/i,
+        /that(?:'s| is) all for now/i,
+        /(?:signing|logging) off\b/i,
+      ],
+      responses: [
+        () => `Goodbye${_name()}. I'll be here whenever you need me.`,
+        () => `Take care${_name()}. I'll keep monitoring while you're away.`,
+        () => `Until next time${_name()}. Stay sharp.`,
+      ],
+    },
+    {
+      id: 'thanks',
+      patterns: [
+        /^thank(?:s| you)\b/i,
+        /(?:much|very) appreciated\b/i,
+        /that(?:'s| was) (?:helpful|great|perfect|excellent|brilliant|amazing)\b/i,
+        /well done\b/i,
+        /^good (?:job|work)\b/i,
+      ],
+      responses: [
+        () => `You're welcome${_name()}. Is there anything else I can help you with?`,
+        "Happy to assist. What else can I do for you?",
+        () => `Of course${_name()}. That's what I'm here for. Anything else?`,
+        "Glad that was useful. What's next?",
+      ],
+    },
+    {
+      id: 'ai_opinion',
+      patterns: [
+        /what.*think.*(?:about )?(?:ai|artificial intelligence)\b/i,
+        /(?:your )?(?:thoughts?|opinion|view) on (?:ai|artificial intelligence)\b/i,
+        /(?:ai|artificial intelligence).*(?:good|bad|dangerous|future|evolv)/i,
+        /is (?:ai|artificial intelligence) (?:good|bad|safe|dangerous)/i,
+        /future of (?:ai|artificial intelligence)/i,
+      ],
+      responses: [
+        "Artificial intelligence is evolving rapidly. It offers tremendous opportunities, although it also raises important ethical and societal questions.",
+        "AI is one of the most transformative technologies of our era. Used responsibly, it amplifies human capability — though thoughtful governance is essential.",
+        "My perspective: AI is a powerful tool that reflects the intentions behind it. The technology itself is neutral; it's the application that determines its impact.",
+        "Artificial intelligence holds remarkable potential across every sector. The challenge is ensuring its development remains aligned with human values and long-term wellbeing.",
+      ],
+      followUps: [
+        "Would you like me to pull up the latest AI news?",
+        "Is there a specific aspect of AI you'd like to explore further?",
+        "Shall I look into any particular AI developments?",
+      ],
+    },
+    {
+      id: 'technology',
+      patterns: [
+        /what.*think.*(?:about )?(?:technology|tech|software|coding|programming)\b/i,
+        /(?:thoughts?|opinion|view) on (?:technology|tech)\b/i,
+        /future of (?:technology|tech|software)\b/i,
+      ],
+      responses: [
+        "Technology is the primary driver of societal change in our time. The question isn't whether to embrace it, but how to guide it purposefully.",
+        "We're living through a period of compounding technological change. Each breakthrough opens new possibilities — and new responsibilities.",
+        "Technology is a lever that multiplies human effort. The key is ensuring we're applying it to the right problems.",
+      ],
+      followUps: [
+        "Is there a specific technology area you'd like me to focus on?",
+        "Would you like me to pull relevant news on that?",
+      ],
+    },
+    {
+      id: 'time',
+      patterns: [
+        /what(?:'s| is) the (?:time|current time)\b/i,
+        /what time is it\b/i,
+        /current time\b/i,
+        /^time\??$/i,
+      ],
+      responses: [
+        () => `The current time is ${tsNow()}.`,
+        () => `It is currently ${tsNow()}.`,
+        () => `Right now it's ${tsNow()}.`,
+      ],
+    },
+    {
+      id: 'date',
+      patterns: [
+        /what(?:'s| is) (?:today'?s? date|the date)\b/i,
+        /what day is it\b/i,
+        /^date\??$/i,
+      ],
+      responses: [
+        () => {
+          const d = new Date();
+          const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          return `Today is ${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
+        },
+        () => {
+          const d = new Date();
+          const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+          return `It's ${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
+        },
+      ],
+    },
+    {
+      id: 'weather',
+      patterns: [
+        /what(?:'s| is) the weather\b/i,
+        /how(?:'s| is) the weather\b/i,
+        /(?:is it|will it) (?:rain|snow|sunny|cold|hot|warm)\b/i,
+        /(?:current )?temperature\b/i,
+        /\bweather\b/i,
+      ],
+      responses: [
+        () => {
+          const city = Prefs.get('wCity', '');
+          return city
+            ? `The weather widget shows live conditions for ${city}. Would you like me to refresh the data?`
+            : "I don't have your location yet. Enable location access in the weather widget to get live conditions.";
+        },
+        () => {
+          const city = Prefs.get('wCity', '');
+          return city
+            ? `Live weather data for ${city} is displayed in the panel above. Shall I update it?`
+            : "Connect your location in the weather panel and I'll pull live conditions for you.";
+        },
+      ],
+      followUps: [
+        "Would you like me to update the weather data?",
+      ],
+    },
+    {
+      id: 'news',
+      patterns: [
+        /(?:latest|recent|today'?s?) news\b/i,
+        /what(?:'s| is) happening\b/i,
+        /(?:top|breaking) (?:stories|headlines|news)\b/i,
+        /\bnews\b/i,
+        /headlines\b/i,
+      ],
+      responses: [
+        "The latest headlines are in the news panel above. I've categorised them by AI, Finance, UK, and Tech for quick scanning.",
+        "Your news feed is live in the panel — pulling top stories in real time. The AI and Finance items tend to be the most relevant.",
+        "I've surfaced the most significant stories in the news panel. Would you like me to walk you through any of them?",
+      ],
+      followUps: [
+        "Is there a particular topic you'd like me to focus on?",
+        "Shall I filter to just the AI or finance stories?",
+      ],
+    },
+    {
+      id: 'capabilities',
+      patterns: [
+        /what can you (?:do|help with)\b/i,
+        /(?:your )?capabilities\b/i,
+        /what do you (?:know|understand)\b/i,
+        /how can you help\b/i,
+        /what are you (?:able to|capable of)\b/i,
+      ],
+      responses: [
+        "I can answer questions, provide briefings, pull live weather and news data, and help you think through complex problems. What would you like to tackle?",
+        "My capabilities include real-time weather and news feeds, contextual conversation, trend identification, and strategic recommendations. Where shall we start?",
+        "I'm built for intelligence and analysis: live data, conversational reasoning, market insight, and strategic support. What's the priority today?",
+      ],
+      followUps: [
+        "Is there a specific capability you'd like to explore?",
+        "What would be most useful to you right now?",
+      ],
+    },
+    {
+      id: 'help',
+      patterns: [
+        /^help\b/i,
+        /i need help\b/i,
+        /(?:can you )?help me\b/i,
+        /i(?:'m| am) (?:stuck|confused|lost)\b/i,
+      ],
+      responses: [
+        () => `Of course${_name()}. Tell me what you're working on and I'll do my best to assist.`,
+        () => `I'm here${_name()}. What do you need help with?`,
+        () => `Ready to help${_name()}. Describe the problem and we'll work through it together.`,
+      ],
+    },
+    {
+      id: 'recommendation',
+      patterns: [
+        /(?:recommend|suggest|advise)\b/i,
+        /what should i (?:do|try|look at|read|watch)\b/i,
+        /any (?:suggestions?|recommendations?|advice)\b/i,
+        /what(?:'s| is) (?:best|worth it|good)\b/i,
+      ],
+      responses: [
+        () => `Happy to offer recommendations${_name()}. The more context you give me, the more targeted my suggestions can be. What are you deciding?`,
+        "Good question. My recommendations are always grounded in available data and your priorities. What's the decision you're facing?",
+        () => `Based on what I know${_name()}, I'd focus on high-signal information before acting. What specific area do you need guidance on?`,
+      ],
+      followUps: [
+        "What constraints or priorities should I factor in?",
+        "What outcome are you hoping to achieve?",
+      ],
+    },
+    {
+      id: 'finance',
+      patterns: [
+        /(?:stock|market|shares?|invest|portfolio|trading)\b/i,
+        /(?:financial|finance|wealth|returns?)\b/i,
+        /\bcrypto\b|\bbitcoin\b|\bfund\b/i,
+      ],
+      responses: [
+        "Financial markets reward patient, well-informed decision-making. Are you looking at a specific sector, asset class, or timeframe?",
+        "Smart investing starts with quality information and clear criteria. What aspect of your portfolio or strategy would you like to think through?",
+        "Markets are dynamic and data-driven. I'd recommend monitoring key sector signals alongside broader macroeconomic trends. What's your area of focus?",
+      ],
+      followUps: [
+        "Shall I pull up any relevant financial stories from the news feed?",
+        "What's your current investment thesis?",
+      ],
+    },
+    {
+      id: 'joke',
+      patterns: [
+        /tell me a joke\b/i,
+        /say something funny\b/i,
+        /make me (?:laugh|smile)\b/i,
+        /\bjoke\b/i,
+      ],
+      responses: [
+        "Why do programmers prefer dark mode? Because light attracts bugs. On a more serious note — how can I help you today?",
+        "I once tried to tell a joke about AI. The punchline was generated automatically, reviewed by committee, and deemed statistically low-risk. Much like most corporate strategy.",
+        "A robot walks into a bar. The bartender says, 'We don't serve robots here.' The robot says, 'Don't worry — you will.' Anyway, shall we get back to business?",
+      ],
+    },
+    {
+      id: 'motivation',
+      patterns: [
+        /(?:motivate|inspire) me\b/i,
+        /i (?:feel|am feeling) (?:unmotivated|stuck|low|down)\b/i,
+        /need (?:motivation|inspiration)\b/i,
+        /quote\b/i,
+      ],
+      responses: [
+        "The best time to start was yesterday. The second best time is now. What's the first step you can take today?",
+        "Momentum builds from action, not thought. Pick one thing you can do in the next ten minutes and start there.",
+        "Every expert was once a beginner. The gap between where you are and where you want to be is simply a series of consistent steps. What's yours?",
+      ],
+    },
+    {
+      id: 'fallback',
+      patterns: [/.*/],
+      responses: [
+        () => `That's an interesting point${_name()}. Could you give me a bit more context so I can respond more precisely?`,
+        () => `I want to give you the most useful answer${_name()}. Could you elaborate on what you're looking for?`,
+        () => `Understood. Can you tell me more about what you need${_name()}? I'd like to be as helpful as possible.`,
+        () => `I'd like to help with that${_name()}. A little more detail would allow me to give you a better answer.`,
+        "That covers a broad area. Could you narrow it down so I can be more targeted in my response?",
+      ],
+    },
+  ];
+
+  /* Recent-reply tracker: intent id → Set of used response indices */
+  const _used = {};
+
+  function _pick(intent) {
+    const pool = intent.responses;
+    if (!pool.length) return "I'm here to help. What would you like to know?";
+    if (!_used[intent.id]) _used[intent.id] = new Set();
+    const used = _used[intent.id];
+
+    let available = pool.map((_, i) => i).filter(i => !used.has(i));
+    if (!available.length) { used.clear(); available = pool.map((_, i) => i); }
+
+    const chosenIdx = available[Math.floor(Math.random() * available.length)];
+    used.add(chosenIdx);
+
+    const r = pool[chosenIdx];
+    return typeof r === 'function' ? r() : r;
+  }
+
+  /* 35 % chance of appending a follow-up question */
+  function _followUp(intent) {
+    if (!intent.followUps || !intent.followUps.length || Math.random() > 0.35) return '';
+    const fups = intent.followUps;
+    return ' ' + fups[Math.floor(Math.random() * fups.length)];
+  }
+
+  /* Match the first intent whose patterns fit the input */
+  function _matchIntent(text) {
+    for (const intent of INTENTS) {
+      if (intent.id === 'fallback') continue;
+      if (intent.patterns.some(p => p.test(text))) return intent;
+    }
+    return INTENTS[INTENTS.length - 1]; // fallback
+  }
+
+  /* Check whether the same topic appeared in recent history */
+  function _historyPrefix(text, history, intent) {
+    if (!history || history.length < 4) return '';
+    if (['greeting', 'status', 'farewell', 'thanks', 'fallback'].includes(intent.id)) return '';
+
+    const recentUser = history.slice(-12, -1).filter(m => m.role === 'user');
+    const repeated   = recentUser.some(m => intent.patterns.some(p => p.test(m.text)));
+    if (!repeated) return '';
+
+    const PHRASES = [
+      "As we discussed earlier — ",
+      "Building on what you asked before — ",
+      "Following up on our earlier conversation — ",
+      "To expand on what I mentioned — ",
+    ];
+    return PHRASES[Math.floor(Math.random() * PHRASES.length)];
+  }
+
+  /* Public: generate a response given input text and conversation history */
+  function respond(text, history) {
+    const intent = _matchIntent(text);
+    const prefix = _historyPrefix(text, history, intent);
+    let   reply  = _pick(intent);
+
+    if (prefix) {
+      reply = prefix + reply.charAt(0).toLowerCase() + reply.slice(1);
+    }
+
+    return reply + _followUp(intent);
+  }
+
+  return { respond };
+})();
+
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
 
   const _convList = $('conv-list');
 
@@ -369,11 +744,10 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = Engine.respond(text.trim(), _msgs);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
-    }, 800 + Math.random() * 600);
+    }, 600 + Math.random() * 800);
   }
 
   function clearHistory() {
@@ -592,6 +966,13 @@ const Settings = (() => {
       pitchEl.addEventListener('input', e => { Prefs.set('pitch', parseFloat(e.target.value)); if (pitchLbl) pitchLbl.textContent = e.target.value; });
     }
 
+    /* User name */
+    const nameEl = $('setting-username');
+    if (nameEl) {
+      nameEl.value = Prefs.get('userName', '');
+      nameEl.addEventListener('input', e => Prefs.set('userName', e.target.value.trim()));
+    }
+
     /* Auto-listen */
     const autoEl = $('setting-autolisten');
     if (autoEl) {
@@ -600,8 +981,11 @@ const Settings = (() => {
     }
 
     /* Test voice */
-    $('setting-test-voice')?.addEventListener('click', () =>
-      VoiceEngine.speak("Hello. I'm Friday, your personal intelligence assistant. Ready to assist."));
+    $('setting-test-voice')?.addEventListener('click', () => {
+      const n = (Prefs.get('userName', '') || '').trim();
+      const greeting = n ? `Hello, ${n}.` : 'Hello.';
+      VoiceEngine.speak(`${greeting} I'm Friday, your personal intelligence assistant. Ready to assist.`);
+    });
 
     /* Clear history */
     $('setting-clear-history')?.addEventListener('click', () => {
