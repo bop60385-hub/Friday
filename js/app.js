@@ -13,6 +13,7 @@ const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
+const BACKEND_URL   = 'https://friday-bop60385-hub.vercel.app/api/chat';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -299,7 +300,7 @@ const Convo = (() => {
   let _msgs    = [];
   let _demoIdx = 0;
 
-  const REPLIES = [
+  const FALLBACK_REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
     "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
     "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
@@ -362,18 +363,41 @@ const Convo = (() => {
     });
   }
 
-  function handleInput(text) {
+  async function handleInput(text) {
     if (!text.trim()) return;
     const inp = $('conv-input');
     if (inp) inp.value = '';
+
+    const history = _msgs
+      .filter(m => m.role !== 'system')
+      .slice(-20)
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
-    setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
+
+    try {
+      console.log('Sending to backend');
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log('Backend response received');
+      const reply = data.reply || FALLBACK_REPLIES[_demoIdx % FALLBACK_REPLIES.length];
       _demoIdx++;
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
-    }, 800 + Math.random() * 600);
+    } catch (err) {
+      console.log('Backend error', err?.message || err);
+      const reply = FALLBACK_REPLIES[_demoIdx % FALLBACK_REPLIES.length];
+      _demoIdx++;
+      _addMsg('ai', reply);
+      VoiceEngine.speak(reply);
+    }
+    VoiceEngine.setOrbState('standby');
   }
 
   function clearHistory() {
