@@ -294,21 +294,207 @@ const VoiceEngine = (() => {
   };
 })();
 
+/* ── Intent Engine ───────────────────────────────────────────── */
+const IntentEngine = (() => {
+  const INTENTS = [
+    {
+      name: 'greeting',
+      patterns: [
+        /\b(hi|hello|hey|howdy|greetings|good\s*(morning|afternoon|evening|day))\b/i,
+        /\bwhat'?s\s*up\b/i,
+        /^(yo|hiya|sup)\b/i,
+      ],
+      weight: 0.9,
+    },
+    {
+      name: 'personal',
+      patterns: [
+        /\b(who|what)\s+(are|is)\s+(you|friday)\b/i,
+        /\b(tell\s+me\s+about\s+your(self)?|your\s+name|introduce\s+your(self)?)\b/i,
+        /\b(are\s+you\s+(real|alive|human|an?\s*ai|sentient)|do\s+you\s+(have\s+feelings?|feel))\b/i,
+        /\bwho\s+(made|created|built)\s+you\b/i,
+      ],
+      weight: 0.85,
+    },
+    {
+      name: 'weather',
+      patterns: [
+        /\b(weather|forecast|temperature|temp|rain|snow|sunny|cloudy|wind(y)?|humid|storm|thunder)\b/i,
+        /\b(hot|cold|warm|freezing|chilly)\s*(today|outside|right\s*now)?\b/i,
+        /\b(will\s+it|is\s+it)\s+(rain|snow|sunny|warm|cold)\b/i,
+      ],
+      weight: 0.8,
+    },
+    {
+      name: 'news',
+      patterns: [
+        /\b(news|headlines?|what'?s\s+(happening|going\s+on)|current\s+events?|top\s+stor(y|ies))\b/i,
+        /\b(latest|today'?s?\s+news|breaking|briefing)\b/i,
+      ],
+      weight: 0.8,
+    },
+    {
+      name: 'finance',
+      patterns: [
+        /\b(stock|market|crypto|bitcoin|btc|ethereum|invest(ment|ing)?|portfolio|shares?|fund|dividend|nasdaq|dow|ftse|forex|trading|economy|gdp|inflation|interest\s*rate)\b/i,
+        /\b(price\s+of|value\s+of)\s+(bitcoin|eth|gold|oil)\b/i,
+      ],
+      weight: 0.8,
+    },
+    {
+      name: 'advice',
+      patterns: [
+        /\b(advice|advise|recommend(ation)?|suggest(ion)?|should\s+i|what\s+do\s+you\s+think|what\s+would\s+you\s+do)\b/i,
+        /\bhelp\s+me\s+(decide|choose|pick)\b/i,
+        /\b(best\s+(way|option|choice)|tips?\s+(on|for|about)|guidance)\b/i,
+      ],
+      weight: 0.75,
+    },
+    {
+      name: 'opportunities',
+      patterns: [
+        /\b(opportunit(y|ies)|prospects?|openings?|leads?|deals?|pipeline)\b/i,
+        /\b(scan\s+(for\s+)?opportunities|find\s+(me\s+)?(deals?|leads?)|new\s+opportunities)\b/i,
+      ],
+      weight: 0.8,
+    },
+    {
+      name: 'system',
+      patterns: [
+        /\b(version|uptime|system\s*status|cpu|memory|ram|latency|diagnostic|self.?check)\b/i,
+        /\b(are\s+you\s+(running|working|ok)|how\s+are\s+you\s+(running|performing))\b/i,
+        /\b(online|offline|status)\b/i,
+      ],
+      weight: 0.8,
+    },
+  ];
+
+  function classify(text) {
+    let best = { intent: 'general', confidence: 0.2 };
+    for (const def of INTENTS) {
+      let hits = 0;
+      for (const pattern of def.patterns) {
+        if (pattern.test(text)) hits++;
+      }
+      if (hits === 0) continue;
+      const confidence = Math.min(def.weight * (hits > 1 ? 1.15 : 1), 1.0);
+      if (confidence > best.confidence) {
+        best = { intent: def.name, confidence };
+      }
+    }
+    return best;
+  }
+
+  return { classify };
+})();
+
+/* ── Intent Handlers ─────────────────────────────────────────── */
+const IntentHandlers = (() => {
+  const _pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function greeting() {
+    const h = new Date().getHours();
+    const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    return _pick([
+      `${sal}! I'm Friday, your personal intelligence assistant. How can I help you today?`,
+      `${sal}! Great to hear from you. What can I do for you?`,
+      `${sal}! I'm online and ready. What's on your agenda?`,
+    ]);
+  }
+
+  function personal() {
+    return _pick([
+      "I'm Friday — your personal intelligence assistant. I can help with weather, news, finance, opportunities, and general assistance. What would you like to explore?",
+      "I'm Friday, a British-voiced AI assistant designed to keep you informed and ahead of the curve. Ask me about the markets, the weather, or the latest headlines.",
+      "I'm Friday. I handle intelligence gathering, briefings, and conversation. I'm here whenever you need me — what can I help with?",
+    ]);
+  }
+
+  function weather() {
+    const summary = Weather.getSummary();
+    if (summary) {
+      return _pick([
+        `Current conditions: ${summary}. Would you like a full forecast?`,
+        `Here's what I'm seeing outside: ${summary}. Anything else you'd like to know?`,
+        `Weather update: ${summary}.`,
+      ]);
+    }
+    return "I don't have your location yet. Enable location access from the weather panel and I'll pull live conditions for you.";
+  }
+
+  function news() {
+    const headlines = NewsWidget.getSummary();
+    if (headlines && headlines.length) {
+      const list = headlines.map((h, i) => `${i + 1}. ${h}`).join(' ');
+      return `Here are the top stories right now: ${list} Shall I go deeper on any of these?`;
+    }
+    return _pick([
+      "I'm pulling the latest headlines now. Check the news panel for live stories, or ask me again in a moment.",
+      "News module is loading. Top stories should appear in the news panel shortly.",
+    ]);
+  }
+
+  function finance() {
+    return _pick([
+      "Your briefing highlights activity across AI, fintech, and macro markets. Shall I run a deeper scan on any sector?",
+      "Market intelligence module is online. I'm tracking unusual volume and sector rotations. Which area would you like me to focus on?",
+      "I can monitor stocks, crypto, macro indicators, and funding news. What would you like me to look into?",
+      "Based on current trends, I've flagged several high-probability moves in the last 24 hours. Shall I walk you through them?",
+    ]);
+  }
+
+  function advice() {
+    return _pick([
+      "Happy to help you think it through. Could you give me a bit more context so I can offer a well-considered view?",
+      "I'd be glad to weigh in. What's the situation you're working through?",
+      "Of course — give me the details and I'll share my perspective. A clear picture always helps.",
+      "I can offer some thoughts. What's the decision or challenge you're facing?",
+    ]);
+  }
+
+  function opportunities() {
+    return _pick([
+      "Scanning your target sectors now. I've found several high-probability opportunities in the last 24 hours — shall I walk you through them?",
+      "Opportunity pipeline is active. I'm tracking funding rounds, market gaps, and emerging sector moves. Want the full briefing?",
+      "I've identified a few promising leads based on current market signals. Which sector are you most interested in?",
+      "Running a deep scan now — I'll cross-reference trends, competitor moves, and open market gaps. Results coming shortly.",
+    ]);
+  }
+
+  function system() {
+    const h = Math.floor(uptimeSec / 3600);
+    const m = Math.floor((uptimeSec % 3600) / 60);
+    const s = uptimeSec % 60;
+    const up = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    return _pick([
+      `All systems nominal. Running ${VERSION}, uptime ${up}. Voice, intelligence, and data modules are all online.`,
+      `System check complete. Running ${VERSION}, uptime ${up}. No issues detected — everything is operational.`,
+      `Status report: ${VERSION} online, uptime ${up}. All core modules reporting green.`,
+    ]);
+  }
+
+  function general() {
+    return _pick([
+      "Understood. I'm monitoring and ready to assist — what would you like to explore?",
+      "I've noted that. Is there anything specific you'd like me to look into?",
+      "Of course. Let me know how I can help — I'm at your disposal.",
+      "Acknowledged. What's next on your agenda?",
+      "Interesting. I'm here to help — just let me know what direction you'd like to take.",
+    ]);
+  }
+
+  const HANDLERS = { greeting, personal, weather, news, finance, advice, opportunities, system, general };
+
+  function handle(intent) {
+    return (HANDLERS[intent] || HANDLERS.general)();
+  }
+
+  return { handle };
+})();
+
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
-  let _msgs    = [];
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
+  let _msgs = [];
 
   const _convList = $('conv-list');
 
@@ -368,9 +554,11 @@ const Convo = (() => {
     if (inp) inp.value = '';
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
+    const { intent, confidence } = IntentEngine.classify(text);
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = confidence < 0.45
+        ? "I'm not certain I understood. Could you rephrase that?"
+        : IntentHandlers.handle(intent);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
@@ -467,11 +655,21 @@ const Weather = (() => {
     }
   }
 
-  return { init, requestLocation, refresh };
+  return {
+    init, requestLocation, refresh,
+    getSummary() {
+      if (_lastTemp === null) return null;
+      const [desc, icon] = _wmoInfo(_lastCode);
+      const { value, label } = _toDisplayTemp(_lastTemp);
+      return `${icon} ${desc} — ${value}${label}${_lastCity ? ` in ${_lastCity}` : ''}`;
+    },
+  };
 })();
 
 /* ── News Widget ─────────────────────────────────────────────── */
 const NewsWidget = (() => {
+  let _lastHeadlines = [];
+
   function _categorise(title) {
     if (/\bai\b|machine.?learning|gpt|llm|openai|gemini|anthropic|neural|deep.?learning/i.test(title)) return ['AI',   'ai'];
     if (/finance|stock|market|fund|invest|crypto|bitcoin|bank|economy|gdp|fed\b/i.test(title))         return ['FIN',  'fin'];
@@ -492,6 +690,7 @@ const NewsWidget = (() => {
       const data = await res.json();
       const hits = (data.hits || []).filter(h => h.title && h.url).slice(0, 5);
       if (!hits.length) return;
+      _lastHeadlines = hits.map(h => h.title);
 
       const container = document.querySelector('.news-items');
       const cta       = document.querySelector('.news-connect-cta');
@@ -520,7 +719,10 @@ const NewsWidget = (() => {
     } catch {}
   }
 
-  return { init };
+  return {
+    init,
+    getSummary() { return _lastHeadlines.slice(0, 3); },
+  };
 })();
 
 /* ── Daily Briefing ──────────────────────────────────────────── */
