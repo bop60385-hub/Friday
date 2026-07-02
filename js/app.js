@@ -302,6 +302,14 @@ const Convo = (() => {
       "I'm here with you. Want to talk it through or focus on one small next step?",
     ],
   };
+  const ANALYST_NEWS_PATTERN = /news|headline|world|event/;
+  const ANALYST_FINANCE_PATTERN = /finance|market|stock|invest|economy|crypto/;
+  const ANALYST_RESEARCH_PATTERN = /research|analy[sz]e|report|compare/;
+  const COMPANION_SUPPORT_PATTERN = /stress|tired|overwhelmed|anxious|worried/;
+  const COMPANION_REFLECT_PATTERN = /reflect|journal|think|purpose/;
+  const COMPANION_CHAT_PATTERN = /chat|talk|conversation/;
+  const ASSISTANT_HELP_PATTERN = /help|assist|support/;
+  const ASSISTANT_PLAN_PATTERN = /today|plan|schedule|task|remind/;
 
   function _getMode() {
     const mode = Prefs.get('mode', 'assistant');
@@ -327,20 +335,20 @@ const Convo = (() => {
     const input = text.toLowerCase();
 
     if (mode === 'analyst') {
-      if (/news|headline|world|event/.test(input)) return "I can analyze the latest events by separating facts, signals, and likely outcomes. Which topic should we start with?";
-      if (/finance|market|stock|invest|economy|crypto/.test(input)) return "For this financial topic, I can give you a quick view of trend, risk, and opportunity to support your decision-making.";
-      if (/research|analy[sz]e|report|compare/.test(input)) return "I'll approach this like a research brief: objective, evidence, interpretation, and recommendation.";
+      if (ANALYST_NEWS_PATTERN.test(input)) return "I can analyze the latest events by separating facts, signals, and likely outcomes. Which topic should we start with?";
+      if (ANALYST_FINANCE_PATTERN.test(input)) return "For this financial topic, I can give you a quick view of trend, risk, and opportunity to support your decision-making.";
+      if (ANALYST_RESEARCH_PATTERN.test(input)) return "I'll approach this like a research brief: objective, evidence, interpretation, and recommendation.";
     }
 
     if (mode === 'companion') {
-      if (/stress|tired|overwhelmed|anxious|worried/.test(input)) return "Thanks for sharing that. You're not alone—let's slow down and focus on one manageable next step.";
-      if (/reflect|journal|think|purpose/.test(input)) return "Let's reflect together: what feels most important to you right now, and why?";
-      if (/chat|talk|conversation/.test(input)) return "Of course. I'm here to talk—what's on your mind?";
+      if (COMPANION_SUPPORT_PATTERN.test(input)) return "Thanks for sharing that. You're not alone—let's slow down and focus on one manageable next step.";
+      if (COMPANION_REFLECT_PATTERN.test(input)) return "Let's reflect together: what feels most important to you right now, and why?";
+      if (COMPANION_CHAT_PATTERN.test(input)) return "Of course. I'm here to talk—what's on your mind?";
     }
 
     if (mode === 'assistant') {
-      if (/help|assist|support/.test(input)) return "Absolutely. Tell me what you need, and I'll help you tackle it efficiently.";
-      if (/today|plan|schedule|task|remind/.test(input)) return "Great idea. We can organize your day into a simple prioritized plan.";
+      if (ASSISTANT_HELP_PATTERN.test(input)) return "Absolutely. Tell me what you need, and I'll help you tackle it efficiently.";
+      if (ASSISTANT_PLAN_PATTERN.test(input)) return "Great idea. We can organize your day into a simple prioritized plan.";
     }
 
     const replies = MODE_REPLIES[mode];
@@ -590,8 +598,9 @@ const Settings = (() => {
     if (modeEl) {
       modeEl.value = Prefs.get('mode', 'assistant');
       modeEl.addEventListener('change', e => {
-        Prefs.set('mode', e.target.value);
-        Toast.show(`Mode switched to ${e.target.value}.`, 'info');
+        const mode = e.target.value;
+        Prefs.set('mode', mode);
+        Toast.show(`Mode switched to ${mode.charAt(0).toUpperCase() + mode.slice(1)}.`, 'info');
       });
     }
 
