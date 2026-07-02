@@ -3,6 +3,8 @@
 (() => {
   const STORAGE_MEMORY = 'friday_user_memory';
   const STORAGE_PERSONALITY = 'friday_personality';
+  const MAX_CONVERSATION_HISTORY = 120;
+  const MAX_PREFERRED_TOPICS = 30;
 
   const PERSONALITIES = {
     professionalBritish: {
@@ -120,8 +122,8 @@
     setMemory(update) {
       const current = this.getMemory();
       const next = merge(current, update || {});
-      if (Array.isArray(next.conversationHistory)) next.conversationHistory = next.conversationHistory.slice(-120);
-      if (Array.isArray(next.preferredTopics)) next.preferredTopics = [...new Set(next.preferredTopics)].slice(0, 30);
+      if (Array.isArray(next.conversationHistory)) next.conversationHistory = next.conversationHistory.slice(-MAX_CONVERSATION_HISTORY);
+      if (Array.isArray(next.preferredTopics)) next.preferredTopics = [...new Set(next.preferredTopics)].slice(0, MAX_PREFERRED_TOPICS);
       write(STORAGE_MEMORY, next);
       return next;
     },
@@ -144,14 +146,17 @@
 
     rememberConversation(userText, aiText) {
       const memory = this.getMemory();
-      const conversationHistory = Array.isArray(memory.conversationHistory) ? memory.conversationHistory.slice(-119) : [];
+      const conversationHistory = Array.isArray(memory.conversationHistory)
+        ? memory.conversationHistory.slice(-(MAX_CONVERSATION_HISTORY - 1))
+        : [];
       conversationHistory.push({
         time: new Date().toISOString(),
         user: String(userText || ''),
         ai: String(aiText || ''),
       });
       const words = String(userText || '').toLowerCase().match(/[a-z]{4,}/g) || [];
-      const preferredTopics = [...new Set([...(memory.preferredTopics || []), ...words])].slice(-30);
+      const preferredTopics = [...new Set([...(memory.preferredTopics || []), ...words])]
+        .slice(-MAX_PREFERRED_TOPICS);
       this.setMemory({ conversationHistory, preferredTopics });
     },
 
