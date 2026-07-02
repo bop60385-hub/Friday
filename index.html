@@ -309,7 +309,11 @@
               <div class="weather-temp">— °C</div>
               <div class="weather-desc">Tap Connect for live weather</div>
             </div>
-            <div class="weather-connect">Connect</div>
+            <div class="weather-actions">
+              <button class="weather-connect weather-action" id="weather-connect-btn" type="button">Connect</button>
+              <button class="weather-action" id="weather-change-btn" type="button" style="display:none">Change Location</button>
+              <button class="weather-action" id="weather-refresh-btn" type="button" style="display:none">Refresh Weather</button>
+            </div>
           </div>
         </div>
       </div>
@@ -362,6 +366,23 @@
   </footer>
 
 </div><!-- /dashboard -->
+
+<div id="location-overlay" class="location-overlay hidden" aria-hidden="true"></div>
+<div id="location-dialog" class="location-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="location-dialog-title">
+  <div class="location-dialog-title" id="location-dialog-title">Unable to access your location. Enter your city or ZIP code.</div>
+  <form id="location-form" class="location-form">
+    <label for="location-city">City</label>
+    <input id="location-city" type="text" autocomplete="address-level2" />
+    <label for="location-state">State</label>
+    <input id="location-state" type="text" autocomplete="address-level1" />
+    <label for="location-zip">ZIP</label>
+    <input id="location-zip" type="text" inputmode="numeric" autocomplete="postal-code" />
+    <div class="location-form-actions">
+      <button type="button" class="settings-btn" id="location-cancel">Cancel</button>
+      <button type="submit" class="settings-btn" id="location-save">Save Location</button>
+    </div>
+  </form>
+</div>
 
 <!-- ════════════════════════════════════════
      SETTINGS PANEL

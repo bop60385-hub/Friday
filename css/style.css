@@ -781,6 +781,32 @@ body::before {
   box-shadow: 0 0 8px var(--accent-glow);
 }
 
+.weather-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.weather-action {
+  background: transparent;
+  font-size: 0.58rem;
+  color: var(--accent-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--accent-dim);
+  padding: 4px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.weather-action:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
 /* ============================================================
    NEWS PLACEHOLDER
    ============================================================ */
@@ -1099,6 +1125,7 @@ body::before {
   transition: opacity 0.25s;
 }
 .settings-overlay.hidden { display: none; }
+.hidden { display: none !important; }
 
 .settings-panel {
   position: fixed;
@@ -1286,6 +1313,71 @@ body::before {
 }
 .settings-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
 .settings-btn-danger:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 8px rgba(255,60,95,0.25); }
+
+/* ============================================================
+   LOCATION DIALOG
+   ============================================================ */
+.location-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 11, 20, 0.72);
+  backdrop-filter: blur(2px);
+  z-index: 260;
+}
+
+.location-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(380px, calc(100vw - 24px));
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  box-shadow: var(--panel-shadow);
+  padding: 14px;
+  z-index: 261;
+}
+
+.location-dialog-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.location-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.location-form label {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.location-form input {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  padding: 7px 8px;
+  outline: none;
+}
+
+.location-form input:focus { border-color: var(--accent); }
+
+.location-form-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
 
 /* ============================================================
    TOAST NOTIFICATION

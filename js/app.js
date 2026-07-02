@@ -11,6 +11,7 @@ const STORAGE_PREFS = 'friday_prefs';
 const STORAGE_HIST  = 'friday_history';
 const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
+const GEOCODE_SEARCH_API = 'https://geocoding-api.open-meteo.com/v1/search';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
 
@@ -394,47 +395,164 @@ const Weather = (() => {
     } catch { return ''; }
   }
 
+  function _formatManualLabel(city, state, zip) {
+    const place = [city, state].filter(Boolean).join(', ');
+    return zip ? (place ? `${place} ${zip}` : zip) : place;
+  }
+
+  function _showControls(isConnected) {
+    const connectBtn = $('weather-connect-btn');
+    const changeBtn = $('weather-change-btn');
+    const refreshBtn = $('weather-refresh-btn');
+    if (connectBtn) connectBtn.style.display = isConnected ? 'none' : 'inline-flex';
+    if (changeBtn) changeBtn.style.display = isConnected ? 'inline-flex' : 'none';
+    if (refreshBtn) refreshBtn.style.display = isConnected ? 'inline-flex' : 'none';
+  }
+
+  function _setDialogVisible(open) {
+    const overlay = $('location-overlay');
+    const dialog = $('location-dialog');
+    if (!overlay || !dialog) return;
+    overlay.classList.toggle('hidden', !open);
+    dialog.classList.toggle('hidden', !open);
+    overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
+  function _openManualDialog() {
+    _setDialogVisible(true);
+    const city = $('location-city');
+    const state = $('location-state');
+    const zip = $('location-zip');
+    if (city) city.value = Prefs.get('wCity', '');
+    if (state) state.value = Prefs.get('wState', '');
+    if (zip) zip.value = Prefs.get('wZip', '');
+    city?.focus();
+  }
+
+  function _closeManualDialog() {
+    _setDialogVisible(false);
+  }
+
+  async function _resolveManualLocation(city, state, zip) {
+    const query = [city, state, zip].filter(Boolean).join(', ');
+    if (!query) throw new Error('missing-manual-location');
+    const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const match = data.results?.[0];
+    if (!match) throw new Error('manual-location-not-found');
+    return match;
+  }
+
   function _updateUI(temp, code, city) {
     const [desc, icon] = _wmoInfo(code);
     const iconEl  = document.querySelector('.weather-icon-wrap');
     const tempEl  = document.querySelector('.weather-temp');
     const descEl  = document.querySelector('.weather-desc');
-    const connBtn = document.querySelector('.weather-connect');
     const badge   = $('weather-badge');
     if (iconEl)  { iconEl.textContent = icon; iconEl.style.opacity = '1'; }
     if (tempEl)  { tempEl.textContent = `${Math.round(temp)} °C`; tempEl.style.color = 'var(--text-primary)'; }
     if (descEl)  { descEl.textContent = city ? `${desc} · ${city}` : desc; descEl.style.color = 'var(--text-secondary)'; }
-    if (connBtn) connBtn.style.display = 'none';
+    _showControls(true);
     if (badge)   { badge.textContent = 'Live'; badge.className = 'panel-badge live'; badge.id = 'weather-badge'; }
   }
 
+  async function _fetchAndRenderWeather(lat, lon, label) {
+    const data = await _fetchWeather(lat, lon);
+    const cityLabel = label || Prefs.get('wLocationLabel', Prefs.get('wCity', ''));
+    _updateUI(data.current.temperature_2m, data.current.weathercode, cityLabel);
+  }
+
+  async function _saveAndApplyManualLocation(city, state, zip) {
+    const resolved = await _resolveManualLocation(city, state, zip);
+    const lat = resolved.latitude;
+    const lon = resolved.longitude;
+    const resolvedLabel = [resolved.name, resolved.admin1].filter(Boolean).join(', ');
+    const manualLabel = _formatManualLabel(city, state, zip) || resolvedLabel;
+    Prefs.set('wLat', lat);
+    Prefs.set('wLon', lon);
+    Prefs.set('wCity', city || resolved.name || '');
+    Prefs.set('wState', state || resolved.admin1 || '');
+    Prefs.set('wZip', zip || resolved.postcode || '');
+    Prefs.set('wLocationLabel', manualLabel);
+    try {
+      const reverseCity = await _fetchCity(lat, lon);
+      if (reverseCity && !city) Prefs.set('wCity', reverseCity);
+    } catch {}
+    await _fetchAndRenderWeather(lat, lon, manualLabel);
+    Toast.show('Location saved. Weather services online.', 'info');
+  }
+
   async function requestLocation() {
-    if (!navigator.geolocation) { Toast.show('Geolocation not available.', 'warn'); return; }
+    if (!navigator.geolocation) { _openManualDialog(); return; }
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lon } = pos.coords;
-      Prefs.set('wLat', lat); Prefs.set('wLon', lon);
+      Prefs.set('wLat', lat);
+      Prefs.set('wLon', lon);
       try {
         const [data, city] = await Promise.all([_fetchWeather(lat, lon), _fetchCity(lat, lon)]);
         if (city) Prefs.set('wCity', city);
+        Prefs.set('wState', '');
+        Prefs.set('wZip', '');
+        Prefs.set('wLocationLabel', city || '');
         const c = data.current;
         _updateUI(c.temperature_2m, c.weathercode, city);
         Toast.show(`Weather updated — ${city || 'your location'}`, 'info');
       } catch { Toast.show('Could not fetch weather data.', 'warn'); }
-    }, () => Toast.show('Location access denied.', 'warn'));
+    }, () => _openManualDialog());
   }
 
-  async function init() {
-    document.querySelector('.weather-connect')?.addEventListener('click', requestLocation);
-    const lat = Prefs.get('wLat', null), lon = Prefs.get('wLon', null);
-    if (lat && lon) {
-      try {
-        const data = await _fetchWeather(lat, lon);
-        _updateUI(data.current.temperature_2m, data.current.weathercode, Prefs.get('wCity', ''));
-      } catch {}
+  async function refreshWeather() {
+    const lat = Prefs.get('wLat', null);
+    const lon = Prefs.get('wLon', null);
+    if (lat === null || lon === null) {
+      requestLocation();
+      return;
+    }
+    try {
+      await _fetchAndRenderWeather(lat, lon);
+      Toast.show('Weather refreshed.', 'info');
+    } catch {
+      Toast.show('Could not fetch weather data.', 'warn');
     }
   }
 
-  return { init, requestLocation };
+  async function submitManualLocation(event) {
+    event.preventDefault();
+    const city = $('location-city')?.value.trim() || '';
+    const state = $('location-state')?.value.trim() || '';
+    const zip = $('location-zip')?.value.trim() || '';
+    if (!city && !zip) {
+      Toast.show('Enter a city or ZIP code.', 'warn');
+      return;
+    }
+    try {
+      await _saveAndApplyManualLocation(city, state, zip);
+      _closeManualDialog();
+    } catch {
+      Toast.show('Unable to find that location.', 'warn');
+    }
+  }
+
+  async function init() {
+    $('weather-connect-btn')?.addEventListener('click', requestLocation);
+    $('weather-change-btn')?.addEventListener('click', _openManualDialog);
+    $('weather-refresh-btn')?.addEventListener('click', refreshWeather);
+    $('location-overlay')?.addEventListener('click', _closeManualDialog);
+    $('location-cancel')?.addEventListener('click', _closeManualDialog);
+    $('location-form')?.addEventListener('submit', submitManualLocation);
+    const lat = Prefs.get('wLat', null), lon = Prefs.get('wLon', null);
+    if (lat !== null && lon !== null) {
+      try {
+        await _fetchAndRenderWeather(lat, lon);
+        _showControls(true);
+      } catch {}
+    } else {
+      _showControls(false);
+    }
+  }
+
+  return { init, requestLocation, refreshWeather, openManualDialog: _openManualDialog };
 })();
 
 /* ── News Widget ─────────────────────────────────────────────── */
@@ -576,7 +694,7 @@ const Settings = (() => {
     });
 
     /* Refresh weather */
-    $('setting-refresh-weather')?.addEventListener('click', () => { Weather.requestLocation(); close(); });
+    $('setting-refresh-weather')?.addEventListener('click', () => { Weather.openManualDialog(); close(); });
   }
 
   return { init, open, close, populateVoiceList };
