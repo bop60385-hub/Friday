@@ -397,7 +397,18 @@ const Weather = (() => {
 
   function _formatManualLabel(city, state, zip) {
     const cityState = [city, state].filter(Boolean).join(', ');
-    return zip ? (cityState ? `${cityState} ${zip}` : zip) : cityState;
+    if (!zip) return cityState;
+    if (!cityState) return zip;
+    return `${cityState} ${zip}`;
+  }
+
+  function _readSavedCoords() {
+    const latRaw = Prefs.get('wLat', null);
+    const lonRaw = Prefs.get('wLon', null);
+    const lat = Number(latRaw);
+    const lon = Number(lonRaw);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { lat, lon };
   }
 
   function _showControls(isConnected) {
@@ -438,6 +449,7 @@ const Weather = (() => {
     if (!query) throw new Error('missing-manual-location');
     const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
     const res = await fetch(url);
+    if (!res.ok) throw new Error('manual-location-lookup-failed');
     const data = await res.json();
     const match = data.results?.[0];
     if (!match) throw new Error('manual-location-not-found');
@@ -478,7 +490,9 @@ const Weather = (() => {
     try {
       const reverseCity = await _fetchCity(lat, lon);
       if (reverseCity && !city) Prefs.set('wCity', reverseCity);
-    } catch {}
+    } catch (err) {
+      log('warn', 'weather', 'Reverse geocode lookup failed for manual location.', err);
+    }
     await _fetchAndRenderWeather(lat, lon, manualLabel);
     Toast.show('Location saved. Weather services online.', 'info');
   }
@@ -503,14 +517,13 @@ const Weather = (() => {
   }
 
   async function refreshWeather() {
-    const lat = Prefs.get('wLat', null);
-    const lon = Prefs.get('wLon', null);
-    if (typeof lat !== 'number' || typeof lon !== 'number') {
+    const coords = _readSavedCoords();
+    if (!coords) {
       requestLocation();
       return;
     }
     try {
-      await _fetchAndRenderWeather(lat, lon);
+      await _fetchAndRenderWeather(coords.lat, coords.lon);
       Toast.show('Weather refreshed.', 'info');
     } catch {
       Toast.show('Could not fetch weather data.', 'warn');
@@ -541,10 +554,10 @@ const Weather = (() => {
     $('location-overlay')?.addEventListener('click', _closeManualDialog);
     $('location-cancel')?.addEventListener('click', _closeManualDialog);
     $('location-form')?.addEventListener('submit', submitManualLocation);
-    const lat = Prefs.get('wLat', null), lon = Prefs.get('wLon', null);
-    if (lat !== null && lon !== null) {
+    const coords = _readSavedCoords();
+    if (coords) {
       try {
-        await _fetchAndRenderWeather(lat, lon);
+        await _fetchAndRenderWeather(coords.lat, coords.lon);
         _showControls(true);
       } catch {}
     } else {
