@@ -77,8 +77,8 @@ module.exports = async function handler(req, res) {
     });
 
     if (!openAIResponse.ok) {
-      const errorPayload = await openAIResponse.json().catch((error) => {
-        console.error('Failed to parse OpenAI error response:', error?.name || 'Error');
+      const errorPayload = await openAIResponse.json().catch((parseError) => {
+        console.error('Failed to parse OpenAI error response:', parseError?.name || 'Error');
         return {};
       });
       const errorType = errorPayload?.error?.type;
