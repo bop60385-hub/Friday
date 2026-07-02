@@ -203,7 +203,7 @@ const VoiceEngine = (() => {
       utter.voice = voice;
     } else {
       window.dispatchEvent(new CustomEvent('friday:voice-selection-required'));
-      Toast.show('No preferred British female voice was found. Please choose a voice in Settings.', 'warn');
+      Toast.show('No preferred British female voice was found. Settings is open so you can choose one.', 'warn');
     }
     utter.lang    = 'en-GB';
     utter.rate    = parseFloat(Prefs.get('rate',  0.9));
@@ -538,12 +538,12 @@ const Settings = (() => {
     const saved = Prefs.get('voiceName', '');
     const active = VoiceEngine.resolveVoice(saved);
     if (activeEl) {
-      activeEl.textContent = active ? `${active.name} (${active.lang})` : 'No preferred en-GB female voice available';
+      activeEl.textContent = active ? `${active.name} (${active.lang})` : 'No preferred British female voice available';
     }
     if (inventoryEl) {
       const inventoryText = voices.length
         ? voices.map(v => `${v.name} — ${v.lang}${v.default ? ' · default' : ''}`).join('\n')
-        : 'No speechSynthesis voices detected.';
+        : 'No speech synthesis voices detected.';
       if (inventoryText !== lastVoiceInventory) {
         inventoryEl.textContent = inventoryText;
         lastVoiceInventory = inventoryText;
