@@ -306,7 +306,7 @@
           <div class="weather-placeholder">
             <div class="weather-icon-wrap">⛅</div>
             <div class="weather-info">
-              <div class="weather-temp">— °C</div>
+              <div class="weather-temp">— °</div>
               <div class="weather-desc">Tap Connect for live weather</div>
             </div>
             <div class="weather-connect">Connect</div>
@@ -412,6 +412,19 @@
     <!-- Weather -->
     <section class="settings-section">
       <div class="settings-section-label">Weather</div>
+      <div class="settings-row">
+        <label>Temperature Units</label>
+      </div>
+      <div class="settings-row settings-radio-group">
+        <label class="settings-radio-label">
+          <input type="radio" name="setting-tempunit" value="F" id="setting-tempunit-f" />
+          Fahrenheit (°F)
+        </label>
+        <label class="settings-radio-label">
+          <input type="radio" name="setting-tempunit" value="C" id="setting-tempunit-c" />
+          Celsius (°C)
+        </label>
+      </div>
       <button class="settings-btn" id="setting-refresh-weather">↻ Update Location</button>
     </section>
 
