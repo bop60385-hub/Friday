@@ -492,6 +492,7 @@ const NewsWidget = (() => {
 
 /* ── Daily Briefing ──────────────────────────────────────────── */
 let briefingRefreshTimer = null;
+const BRIEFING_REFRESH_INTERVAL_MS = 30000;
 function initBriefing() {
   const quotes = [
     '“Success is the sum of small efforts, repeated day in and day out.”',
@@ -501,7 +502,8 @@ function initBriefing() {
     '“Consistency compounds faster than intensity.”',
   ];
   const today = new Date();
-  const quoteIndex = ((today.getFullYear() * 372) + (today.getMonth() * 31) + today.getDate()) % quotes.length;
+  const localDayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const quoteIndex = Math.floor(localDayStart / 86400000) % quotes.length;
   const quoteToday = quotes[quoteIndex];
   const intro = $('briefing-intro');
   if (intro) intro.textContent = 'Good morning, Benny. Here is your daily briefing.';
@@ -537,7 +539,7 @@ function initBriefing() {
 
   const startRefresh = () => {
     if (briefingRefreshTimer) clearInterval(briefingRefreshTimer);
-    briefingRefreshTimer = setInterval(_render, 30000);
+    briefingRefreshTimer = setInterval(_render, BRIEFING_REFRESH_INTERVAL_MS);
   };
   const stopRefresh = () => {
     if (!briefingRefreshTimer) return;
