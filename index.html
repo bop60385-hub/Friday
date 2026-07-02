@@ -409,6 +409,19 @@
       </div>
     </section>
 
+    <!-- AI -->
+    <section class="settings-section">
+      <div class="settings-section-label">AI Integration</div>
+      <div class="settings-row">
+        <label for="setting-ai-mode">Assistant Mode <span id="setting-ai-mode-label">Local Mode</span></label>
+        <input type="checkbox" id="setting-ai-mode" class="settings-toggle" />
+      </div>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-ai-provider" style="flex:none;">AI provider</label>
+        <select id="setting-ai-provider" class="settings-select"></select>
+      </div>
+    </section>
+
     <!-- Weather -->
     <section class="settings-section">
       <div class="settings-section-label">Weather</div>
@@ -424,6 +437,7 @@
   </div>
 </aside>
 
+<script src="js/apiService.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
+const AI_UNAVAILABLE_MESSAGE = "I'm unable to access my advanced intelligence systems at the moment.";
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -354,9 +355,15 @@ const Convo = (() => {
     if (inp) inp.value = '';
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
-    setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+    setTimeout(async () => {
+      let reply = REPLIES[_demoIdx % REPLIES.length];
+      const mode = window.APIService?.getMode?.() || Prefs.get('assistantMode', 'local');
+      if (mode === 'ai' && window.APIService?.sendMessage) {
+        const result = await window.APIService.sendMessage({ message: text, history: _msgs });
+        reply = result?.ok ? result.text : (result?.text || AI_UNAVAILABLE_MESSAGE);
+      } else {
+        _demoIdx++;
+      }
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
@@ -564,6 +571,45 @@ const Settings = (() => {
     if (autoEl) {
       autoEl.checked = Prefs.get('autoListen', false);
       autoEl.addEventListener('change', e => Prefs.set('autoListen', e.target.checked));
+    }
+
+    /* Assistant mode */
+    const aiModeToggle = $('setting-ai-mode');
+    const aiModeLabel  = $('setting-ai-mode-label');
+    const aiProviderEl = $('setting-ai-provider');
+    const hasApiService = !!window.APIService;
+
+    if (aiProviderEl) {
+      aiProviderEl.innerHTML = '';
+      const providers = window.APIService?.getProviderOptions?.() || [];
+      providers.forEach(({ id, label }) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = label;
+        aiProviderEl.appendChild(option);
+      });
+      const selectedProvider = window.APIService?.getSettings?.().provider;
+      if (selectedProvider) aiProviderEl.value = selectedProvider;
+      aiProviderEl.disabled = !hasApiService;
+      aiProviderEl.addEventListener('change', e => {
+        if (!window.APIService?.setProvider) return;
+        window.APIService.setProvider(e.target.value);
+      });
+    }
+
+    if (aiModeToggle) {
+      const selectedMode = window.APIService?.getMode?.() || Prefs.get('assistantMode', 'local');
+      aiModeToggle.checked = selectedMode === 'ai';
+      aiModeToggle.disabled = !hasApiService;
+      if (aiModeLabel) aiModeLabel.textContent = aiModeToggle.checked ? 'AI Mode' : 'Local Mode';
+      Prefs.set('assistantMode', aiModeToggle.checked ? 'ai' : 'local');
+      aiModeToggle.addEventListener('change', e => {
+        const mode = e.target.checked ? 'ai' : 'local';
+        Prefs.set('assistantMode', mode);
+        window.APIService?.setMode?.(mode);
+        if (aiModeLabel) aiModeLabel.textContent = e.target.checked ? 'AI Mode' : 'Local Mode';
+        Toast.show(e.target.checked ? 'AI Mode enabled.' : 'Local Mode enabled.', 'info');
+      });
     }
 
     /* Test voice */

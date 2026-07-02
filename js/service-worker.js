@@ -3,7 +3,7 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v4';
+const CACHE_NAME = 'friday-v5';
 const SERVICE_WORKER_PATH = '/js/service-worker.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const hasExpectedPath = self.location.pathname.endsWith(SERVICE_WORKER_PATH);
@@ -23,6 +23,7 @@ const PRECACHE_ASSETS = [
   withRoot('/'),
   withRoot('/index.html'),
   withRoot('/css/style.css'),
+  withRoot('/js/apiService.js'),
   withRoot('/js/app.js'),
   withRoot('/manifest.webmanifest'),
   withRoot('/icons/icon-192.png'),
