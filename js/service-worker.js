@@ -3,17 +3,31 @@
    Cache-first strategy for offline PWA support
    ============================================================ */
 
-const CACHE_NAME = 'friday-v2';
+const CACHE_NAME = 'friday-v4';
+const SERVICE_WORKER_PATH = '/js/service-worker.js';
+const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const hasExpectedPath = self.location.pathname.endsWith(SERVICE_WORKER_PATH);
+if (!hasExpectedPath) {
+  console.warn(`[Friday][service-worker] Unexpected registration path: ${self.location.pathname}`);
+}
+const RAW_APP_ROOT = self.location.pathname
+  .replace(new RegExp(`${escapeRegExp(SERVICE_WORKER_PATH)}$`), '')
+  .replace(/\/$/, '');
+const APP_ROOT = RAW_APP_ROOT;
+const withRoot = path => {
+  const normalizedPath = path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`;
+  return `${APP_ROOT}${normalizedPath}`;
+};
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon.svg',
+  withRoot('/'),
+  withRoot('/index.html'),
+  withRoot('/css/style.css'),
+  withRoot('/js/app.js'),
+  withRoot('/manifest.webmanifest'),
+  withRoot('/icons/icon-192.png'),
+  withRoot('/icons/icon-512.png'),
+  withRoot('/icons/icon.svg'),
 ];
 
 /* ── Install: pre-cache all shell assets ─────────────────── */
@@ -61,7 +75,7 @@ self.addEventListener('fetch', event => {
       }).catch(() => {
         // Offline fallback — return cached index for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(withRoot('/index.html'));
         }
       });
     })
