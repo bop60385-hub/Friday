@@ -285,6 +285,9 @@ const Convo = (() => {
   let _msgs    = [];
   const NAME_KEY = 'userName';
   const MAX_NAME_CAPTURE = 40;
+  const MAX_NAME_LENGTH = 32;
+  const MAX_NAME_WORDS = 4;
+  const MAX_NAME_SCAN_HISTORY = 50;
   const NAME_PATTERN = new RegExp(`\\b(?:my name is|i am|i'm|call me)\\s+([a-zA-Z][a-zA-Z'\\-\\s]{1,${MAX_NAME_CAPTURE}})\\b`, 'i');
 
   const _convList = $('conv-list');
@@ -299,6 +302,8 @@ const Convo = (() => {
       .replace(/[^a-zA-Z'\-\s]/g, '')
       .replace(/\s+/g, ' ');
     if (!clean) return '';
+    const parts = clean.split(' ');
+    if (clean.length > MAX_NAME_LENGTH || parts.length > MAX_NAME_WORDS) return '';
     return clean
       .split(' ')
       .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -336,7 +341,7 @@ const Convo = (() => {
       return `Sleep well${name ? `, ${name}` : ''}. I'll be here when you need me.`;
     }
     if (/\b(struggling|overwhelmed|stressed|hard time|anxious|worried|panic(?:king)?|burned out|can't cope|cannot cope)\b/i.test(input)) {
-      return `I understand${nameSuffix}. We'll take this one step at a time. You're not handling this alone.`;
+      return `I understand${nameSuffix}. We'll take this one step at a time. You're not handling this alone. If it feels overwhelming, please reach out to someone you trust.`;
     }
     if (/\b(news|finance|market|stocks?|economy|inflation|interest rates?|geopolitics|world events?|war)\b/i.test(input)) {
       return 'Understood. I will keep this analytical and concise: key signal, likely impact, and practical options.';
@@ -389,7 +394,7 @@ const Convo = (() => {
   function init() {
     _msgs = Hist.load();
     if (!_name()) {
-      const recentMsgs = _msgs.slice(-50);
+      const recentMsgs = _msgs.slice(-MAX_NAME_SCAN_HISTORY);
       for (const msg of recentMsgs) {
         if (msg.role === 'user') {
           _maybeStoreName(msg.text || '');
