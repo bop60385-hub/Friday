@@ -297,10 +297,26 @@ const VoiceEngine = (() => {
 /* ── Conversation Engine ─────────────────────────────────────── */
 const Engine = (() => {
 
+  /* Tuneable constants */
+  const FOLLOWUP_PROBABILITY  = 0.35; // chance of appending a follow-up question
+  const HISTORY_WINDOW_SIZE   = 12;   // how many recent messages to scan for repeated topics
+  const MIN_RESPONSE_DELAY    = 600;  // ms before reply appears
+  const RESPONSE_DELAY_RANGE  = 800;  // random extra ms added to delay
+
+  /* Day / month name arrays shared by date responses */
+  const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
   /* Return ", Name" when a user name is stored, otherwise empty string */
   function _name() {
     const n = (Prefs.get('userName', '') || '').trim();
     return n ? `, ${n}` : '';
+  }
+
+  /* Return a time-appropriate salutation */
+  function _salutation() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   }
 
   /* Intent definitions ─────────────────────────────────────── */
@@ -349,7 +365,7 @@ const Engine = (() => {
         /^(?:hi|hello|hey) friday\b/i,
       ],
       responses: [
-        () => { const h = new Date().getHours(); const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; return `${sal}${_name()}. How can I assist you today?`; },
+        () => `${_salutation()}${_name()}. How can I assist you today?`,
         () => `Hello${_name()}. I'm ready when you are. What would you like to work on?`,
         () => `Hi there${_name()}. Always good to hear from you. How can I help?`,
       ],
@@ -443,18 +459,8 @@ const Engine = (() => {
         /^date\??$/i,
       ],
       responses: [
-        () => {
-          const d = new Date();
-          const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-          return `Today is ${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
-        },
-        () => {
-          const d = new Date();
-          const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-          const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-          return `It's ${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
-        },
+        () => { const d = new Date(); return `Today is ${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}.`; },
+        () => { const d = new Date(); return `It's ${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}.`; },
       ],
     },
     {
@@ -631,9 +637,9 @@ const Engine = (() => {
     return typeof r === 'function' ? r() : r;
   }
 
-  /* 35 % chance of appending a follow-up question */
+  /* Optionally append a follow-up question */
   function _followUp(intent) {
-    if (!intent.followUps || !intent.followUps.length || Math.random() > 0.35) return '';
+    if (!intent.followUps || !intent.followUps.length || Math.random() > FOLLOWUP_PROBABILITY) return '';
     const fups = intent.followUps;
     return ' ' + fups[Math.floor(Math.random() * fups.length)];
   }
@@ -652,7 +658,7 @@ const Engine = (() => {
     if (!history || history.length < 4) return '';
     if (['greeting', 'status', 'farewell', 'thanks', 'fallback'].includes(intent.id)) return '';
 
-    const recentUser = history.slice(-12, -1).filter(m => m.role === 'user');
+    const recentUser = history.slice(-HISTORY_WINDOW_SIZE, -1).filter(m => m.role === 'user');
     const repeated   = recentUser.some(m => intent.patterns.some(p => p.test(m.text)));
     if (!repeated) return '';
 
@@ -671,14 +677,14 @@ const Engine = (() => {
     const prefix = _historyPrefix(text, history, intent);
     let   reply  = _pick(intent);
 
-    if (prefix) {
+    if (prefix && reply.length > 1) {
       reply = prefix + reply.charAt(0).toLowerCase() + reply.slice(1);
     }
 
     return reply + _followUp(intent);
   }
 
-  return { respond };
+  return { respond, MIN_RESPONSE_DELAY, RESPONSE_DELAY_RANGE };
 })();
 
 /* ── Conversation ────────────────────────────────────────────── */
@@ -747,7 +753,7 @@ const Convo = (() => {
       const reply = Engine.respond(text.trim(), _msgs);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
-    }, 600 + Math.random() * 800);
+    }, Engine.MIN_RESPONSE_DELAY + Math.random() * Engine.RESPONSE_DELAY_RANGE);
   }
 
   function clearHistory() {
