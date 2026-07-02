@@ -396,8 +396,8 @@ const Weather = (() => {
   }
 
   function _formatManualLabel(city, state, zip) {
-    const place = [city, state].filter(Boolean).join(', ');
-    return zip ? (place ? `${place} ${zip}` : zip) : place;
+    const cityState = [city, state].filter(Boolean).join(', ');
+    return zip ? (cityState ? `${cityState} ${zip}` : zip) : cityState;
   }
 
   function _showControls(isConnected) {
@@ -505,7 +505,7 @@ const Weather = (() => {
   async function refreshWeather() {
     const lat = Prefs.get('wLat', null);
     const lon = Prefs.get('wLon', null);
-    if (lat === null || lon === null) {
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
       requestLocation();
       return;
     }
@@ -694,7 +694,7 @@ const Settings = (() => {
     });
 
     /* Refresh weather */
-    $('setting-refresh-weather')?.addEventListener('click', () => { Weather.openManualDialog(); close(); });
+    $('setting-refresh-weather')?.addEventListener('click', () => { Weather.refreshWeather(); close(); });
   }
 
   return { init, open, close, populateVoiceList };
