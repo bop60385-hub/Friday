@@ -282,19 +282,81 @@ const VoiceEngine = (() => {
 
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
-  let _msgs    = [];
-  let _demoIdx = 0;
+  let _msgs      = [];
+  let _lastReply = '';
 
-  const REPLIES = [
+  /* Intent definitions – checked in order; first match wins */
+  const INTENTS = [
+    {
+      test: /\b(what'?s?\s+your\s+name|who\s+are\s+you)\b/i,
+      replies: [
+        "I'm Friday — your personal intelligence assistant. I'm here to keep you briefed and ahead of the curve.",
+        "My name is Friday. I'm an AI-powered assistant built to help you monitor opportunities, markets, and more.",
+      ],
+    },
+    {
+      test: /\bgood\s+morning\b/i,
+      replies: [
+        "Good morning! I'm online and fully operational. Your briefing is ready — shall I run through the highlights?",
+        "Good morning! Great to hear from you. What would you like to focus on today?",
+      ],
+    },
+    {
+      test: /\bgood\s+(afternoon|evening|night)\b/i,
+      replies: [
+        "Good evening! I've been monitoring your sectors throughout the day. Would you like an end-of-day summary?",
+        "Good evening. I'm standing by — how can I assist you?",
+      ],
+    },
+    {
+      test: /\b(thank\s+you|thanks)\b/i,
+      replies: [
+        "You're welcome. Is there anything else I can help you with?",
+        "Of course. Always here when you need me.",
+        "My pleasure. Let me know if you need anything further.",
+      ],
+    },
+    {
+      test: /\bwhat\s+can\s+you\s+(do|help|assist)\b/i,
+      replies: [
+        "I can scan for market opportunities, track investment trends, deliver news briefings, provide weather updates, and assist with general queries. What would you like to explore?",
+        "My capabilities include market intelligence, opportunity scanning, live briefings, weather, and news. How can I help?",
+      ],
+    },
+  ];
+
+  /* Market / opportunity replies — only shown when the topic warrants it */
+  const MARKET_REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
     "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
     "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
     "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
     "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
   ];
+
+  const MARKET_TEST = /\b(opportunit|invest|market|stock|fund|portfolio|sector|trad(e|ing)|scan|briefing|financ(e|ial)|analy[sz](is|e|ze))\w*\b/i;
+
+  /* General-purpose fallback replies */
+  const GENERAL_REPLIES = [
+    "Acknowledged. I've noted that and I'm standing by for your next instruction.",
+    "Understood. Is there anything specific you'd like me to look into?",
+    "I've noted that. Is there anything else I can help you with?",
+    "Understood. I'll keep monitoring and alert you if anything changes.",
+  ];
+
+  function _pickUnique(pool) {
+    const filtered    = pool.length > 1 ? pool.filter(r => r !== _lastReply) : pool;
+    const candidates  = filtered.length > 0 ? filtered : pool;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function _resolveReply(text) {
+    for (const intent of INTENTS) {
+      if (intent.test.test(text)) return _pickUnique(intent.replies);
+    }
+    if (MARKET_TEST.test(text)) return _pickUnique(MARKET_REPLIES);
+    return _pickUnique(GENERAL_REPLIES);
+  }
 
   const _convList = $('conv-list');
 
@@ -355,8 +417,8 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = _resolveReply(text);
+      _lastReply  = reply;
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
