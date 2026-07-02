@@ -492,7 +492,9 @@ const NewsWidget = (() => {
 
 /* ── Daily Briefing ──────────────────────────────────────────── */
 let briefingRefreshTimer = null;
+let briefingLifecycleBound = false;
 const BRIEFING_REFRESH_INTERVAL_MS = 30000;
+const MS_PER_DAY = 86400000;
 function initBriefing() {
   const quotes = [
     '“Success is the sum of small efforts, repeated day in and day out.”',
@@ -503,7 +505,7 @@ function initBriefing() {
   ];
   const today = new Date();
   const localDayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const quoteIndex = Math.floor(localDayStart / 86400000) % quotes.length;
+  const quoteIndex = Math.floor(localDayStart / MS_PER_DAY) % quotes.length;
   const quoteToday = quotes[quoteIndex];
   const intro = $('briefing-intro');
   if (intro) intro.textContent = 'Good morning, Benny. Here is your daily briefing.';
@@ -539,6 +541,7 @@ function initBriefing() {
 
   const startRefresh = () => {
     if (briefingRefreshTimer) clearInterval(briefingRefreshTimer);
+    _render();
     briefingRefreshTimer = setInterval(_render, BRIEFING_REFRESH_INTERVAL_MS);
   };
   const stopRefresh = () => {
@@ -547,20 +550,18 @@ function initBriefing() {
     briefingRefreshTimer = null;
   };
 
-  _render();
   startRefresh();
 
-  if (!initBriefing._lifecycleBound) {
+  if (!briefingLifecycleBound) {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         stopRefresh();
       } else {
-        _render();
         startRefresh();
       }
     });
     window.addEventListener('pagehide', stopRefresh);
-    initBriefing._lifecycleBound = true;
+    briefingLifecycleBound = true;
   }
 
   $('briefing-speak')?.addEventListener('click', () => {
