@@ -229,7 +229,7 @@ const VoiceEngine = (() => {
     } catch (err) {
       log('warn', 'voice', 'SpeechRecognition failed to start.', err?.message || err);
       _isListening = false;
-      Toast.show('Voice input is unavailable right now. Please use typed input.', 'warn');
+      Toast.show('Voice input is unavailable. Please use typed input.', 'warn');
       return false;
     }
   }
@@ -702,9 +702,6 @@ function bootApp() {
       log('error', 'boot', `${name} failed to initialize.`, err);
     }
   });
-  if (!VoiceEngine.canListen) {
-    log('warn', 'voice', 'Speech recognition unavailable; typed input fallback remains enabled.');
-  }
 }
 
 if (document.readyState === 'loading') {
