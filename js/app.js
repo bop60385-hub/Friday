@@ -283,18 +283,45 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
+  const _replyCursor = {};
 
-  const REPLIES = [
+  const OPPORTUNITY_REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
     "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
     "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
     "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
     "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
   ];
+  const GENERAL_REPLIES = [
+    "Understood. Tell me what you'd like me to help with next.",
+    "I'm ready. Share what you want to explore, and I'll assist.",
+  ];
+  const INTENT_REPLIES = {
+    name: [
+      "My name is Friday.",
+      "I'm Friday.",
+    ],
+    identity: [
+      "I'm Friday, your personal intelligence assistant.",
+      "I'm Friday — your AI assistant.",
+    ],
+    morning: [
+      "Good morning.",
+      "Good morning. Ready when you are.",
+    ],
+    evening: [
+      "Good evening.",
+      "Good evening. I'm here to help.",
+    ],
+    thanks: [
+      "You're welcome.",
+      "Anytime.",
+    ],
+    capabilities: [
+      "I can help with market and opportunity discussions, quick research prompts, and general assistant tasks.",
+      "I can chat, answer questions, and help you review opportunities, investments, and market topics.",
+    ],
+  };
 
   const _convList = $('conv-list');
 
@@ -330,6 +357,39 @@ const Convo = (() => {
     return msg;
   }
 
+  function _lastAiText() {
+    for (let i = _msgs.length - 1; i >= 0; i--) {
+      if (_msgs[i].role === 'ai') return _msgs[i].text;
+    }
+    return '';
+  }
+
+  function _pickReply(key, replies) {
+    if (!replies.length) return '';
+    const lastAi = _lastAiText();
+    let idx = _replyCursor[key] || 0;
+    let candidate = replies[idx % replies.length];
+    let tries = 0;
+    while (replies.length > 1 && candidate === lastAi && tries < replies.length) {
+      idx++;
+      tries++;
+      candidate = replies[idx % replies.length];
+    }
+    _replyCursor[key] = idx + 1;
+    return candidate;
+  }
+
+  function _detectIntent(text) {
+    if (/\b(what(?:'s| is)\s+your\s+name|your name)\b/i.test(text)) return 'name';
+    if (/\b(who are you|what are you)\b/i.test(text)) return 'identity';
+    if (/\bgood morning\b/i.test(text)) return 'morning';
+    if (/\bgood evening\b/i.test(text)) return 'evening';
+    if (/\b(thank you|thanks)\b/i.test(text)) return 'thanks';
+    if (/\bwhat can you do\b/i.test(text)) return 'capabilities';
+    if (/\b(opportunit(?:y|ies)|invest(?:ment|ing)?|market(?:s)?|stock(?:s)?|portfolio|watchlist|sector(?:s)?)\b/i.test(text)) return 'opportunity';
+    return 'general';
+  }
+
   function init() {
     _msgs = Hist.load();
     if (_msgs.length === 0) {
@@ -355,8 +415,12 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const intent = _detectIntent(text);
+      const reply = intent === 'opportunity'
+        ? _pickReply('opportunity', OPPORTUNITY_REPLIES)
+        : intent === 'general'
+          ? _pickReply('general', GENERAL_REPLIES)
+          : _pickReply(intent, INTENT_REPLIES[intent] || GENERAL_REPLIES);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
