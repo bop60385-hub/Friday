@@ -399,7 +399,11 @@ const Convo = (() => {
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
       let idx;
-      do { idx = Math.floor(Math.random() * REPLIES.length); } while (idx === _lastReplyIdx && REPLIES.length > 1);
+      if (_lastReplyIdx === -1) {
+        idx = Math.floor(Math.random() * REPLIES.length);
+      } else {
+        idx = (_lastReplyIdx + 1 + Math.floor(Math.random() * (REPLIES.length - 1))) % REPLIES.length;
+      }
       _lastReplyIdx = idx;
       const reply = REPLIES[idx];
       _addMsg('ai', reply);
