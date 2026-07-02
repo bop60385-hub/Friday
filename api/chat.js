@@ -24,6 +24,13 @@ function parseBody(body) {
     } catch {
       return {};
     }
+
+    function getOpenAIErrorMessage(status, errorType) {
+      if (status === 401 || errorType === 'invalid_request_error') return 'OpenAI authentication failed';
+      if (status === 429 || errorType === 'rate_limit_error') return 'OpenAI rate limit exceeded';
+      if (status >= 500) return 'OpenAI service unavailable';
+      return 'OpenAI request failed';
+    }
   }
   if (typeof body === 'object') return body;
   return {};
@@ -68,18 +75,26 @@ module.exports = async function handler(req, res) {
     });
 
     if (!openAIResponse.ok) {
-      return res.status(openAIResponse.status).json({ error: 'OpenAI request failed' });
+      const errorPayload = await openAIResponse.json().catch(() => ({}));
+      const errorType = errorPayload?.error?.type;
+      const errorMessage = getOpenAIErrorMessage(openAIResponse.status, errorType);
+      return res.status(openAIResponse.status).json({ error: errorMessage });
     }
 
     const data = await openAIResponse.json();
-    const responseText = data?.choices?.[0]?.message?.content?.trim();
+    if (!Array.isArray(data?.choices) || data.choices.length === 0) {
+      return res.status(502).json({ error: 'Invalid model response' });
+    }
+
+    const responseText = data.choices[0]?.message?.content?.trim();
 
     if (!responseText) {
       return res.status(502).json({ error: 'Empty model response' });
     }
 
     return res.status(200).json({ response: responseText });
-  } catch {
+  } catch (error) {
+    console.error('OpenAI chat endpoint error:', error?.message || error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
