@@ -299,6 +299,7 @@ const Convo = (() => {
   let _msgs    = [];
   let _demoIdx = 0;
 
+  const RECALL_FREQUENCY = 3;
   const REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
     "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
@@ -378,7 +379,7 @@ const Convo = (() => {
       let reply = REPLIES[_demoIdx % REPLIES.length];
       _demoIdx++;
       /* Occasionally surface a memory recall after the primary reply */
-      if (typeof Memory !== 'undefined' && _demoIdx % 3 === 0) {
+      if (typeof Memory !== 'undefined' && _demoIdx % RECALL_FREQUENCY === 0) {
         const recall = Memory.getRandomRecall();
         if (recall) reply += ` ${recall}`;
       }
@@ -639,7 +640,7 @@ const Settings = (() => {
       if (typeof Memory !== 'undefined') topicsEl.value = Memory.get('favoriteTopics', []).join(', ');
       topicsEl.addEventListener('change', e => {
         if (typeof Memory !== 'undefined') {
-          const topics = e.target.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+          const topics = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
           Memory.set('favoriteTopics', topics);
         }
       });

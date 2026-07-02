@@ -139,8 +139,14 @@ const Memory = (() => {
     const interests  = get('interests', []);
     const summaries  = get('conversationSummaries', []);
 
+    const _joinList = list => {
+      if (list.length === 1) return list[0];
+      if (list.length === 2) return `${list[0]} and ${list[1]}`;
+      return `${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]}`;
+    };
+
     if (topics.length >= 2) {
-      lines.push(`I remember you follow ${topics.slice(0, 3).join(' and ')}.`);
+      lines.push(`I remember you follow ${_joinList(topics.slice(0, 3))}.`);
     } else if (topics.length === 1) {
       lines.push(`I remember you follow ${topics[0]}.`);
     }
@@ -151,7 +157,7 @@ const Memory = (() => {
     }
 
     if (interests.length > 0) {
-      lines.push(`You have interests in ${interests.slice(0, 3).join(', ')}.`);
+      lines.push(`You have interests in ${_joinList(interests.slice(0, 3))}.`);
     }
 
     return lines;
