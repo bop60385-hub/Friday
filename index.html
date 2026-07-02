@@ -1,66 +1,442 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#050b1a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Friday" />
-    <title>Friday • Personal Intelligence Officer</title>
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <main class="app-shell">
-      <header class="header-panel glow-panel">
-        <p class="kicker">Friday</p>
-        <h1>Personal Intelligence Officer</h1>
-        <p id="status" class="status">Ready when you are.</p>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FRIDAY — Intelligence Dashboard</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#00c8ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Friday" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png" />
+  <meta name="description" content="Friday — AI-powered personal intelligence dashboard" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
 
-      <section class="briefing glow-panel" aria-live="polite">
-        <h2>Daily Briefing</h2>
-        <p id="briefing-text">
-          Good day. Markets, geopolitics, and weather updates are standing by.
-        </p>
-        <button id="briefing-button" class="secondary-btn" type="button">Generate Briefing</button>
-      </section>
+<!-- ════════════════════════════════════════
+     INSTALL BANNER (hidden until triggered)
+     ════════════════════════════════════════ -->
+<div id="install-banner" class="install-banner hidden" role="banner">
+  <span class="install-banner-icon">📲</span>
+  <span class="install-banner-text" id="install-text">Install Friday for the best experience.</span>
+  <div class="install-banner-actions">
+    <button class="btn-install" id="install-btn" style="display:none">Install</button>
+    <button class="btn-dismiss" id="install-dismiss">✕</button>
+  </div>
+</div>
 
-      <section class="actions glow-panel" aria-label="Focus areas">
-        <h2>Focus Areas</h2>
-        <ul>
-          <li>Markets & economic trends</li>
-          <li>Geopolitical developments</li>
-          <li>Income and investment opportunities</li>
-          <li>Productivity and planning support</li>
-          <li>Weather and critical alerts</li>
-        </ul>
-      </section>
+<div class="dashboard">
 
-      <section class="conversation glow-panel" aria-live="polite" aria-label="Conversation history">
-        <h2>Conversation</h2>
-        <div id="history" class="history"></div>
-      </section>
+  <!-- ════════════════════════════════════════
+       HEADER — brand · clock · status
+       ════════════════════════════════════════ -->
+  <header class="header">
 
-      <section class="composer glow-panel">
-        <form id="prompt-form">
-          <label for="prompt" class="sr-only">Ask Friday</label>
-          <textarea id="prompt" rows="3" placeholder="Ask Friday for insights, opportunities, updates, or planning support..."></textarea>
-          <div class="composer-controls">
-            <button type="submit" class="primary-btn">Send</button>
-            <button id="speak-button" class="secondary-btn" type="button">Speak Response</button>
+    <div class="header-brand">
+      <div class="brand-logo">F</div>
+      <div class="brand-text">
+        <span class="brand-name">Friday</span>
+        <span class="brand-tagline">Personal Intelligence OS</span>
+      </div>
+    </div>
+
+    <div class="header-clock">
+      <div class="clock-time" id="clock-time">00:00:00</div>
+      <div class="clock-date" id="clock-date">LOADING…</div>
+    </div>
+
+    <div class="header-status">
+      <div class="status-badge">
+        <div class="status-dot online"></div>
+        All Systems Online
+      </div>
+      <div class="status-badge">
+        <div class="status-dot online"></div>
+        AI Core Active
+      </div>
+      <div class="status-badge">
+        <div class="status-dot idle"></div>
+        <span id="header-voice-status">Voice: Standby</span>
+      </div>
+      <button class="btn-settings" id="btn-settings" title="Settings" aria-label="Open settings">⚙</button>
+    </div>
+
+  </header>
+
+  <!-- ════════════════════════════════════════
+       MAIN GRID
+       ════════════════════════════════════════ -->
+  <div class="main-grid">
+
+    <!-- ── LEFT COLUMN ─────────────────────── -->
+    <div class="col-left">
+
+      <!-- System Status -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">⬡</span> System Status
           </div>
-        </form>
+          <span class="panel-badge live">Live</span>
+        </div>
+        <div class="panel-body">
+          <div class="system-grid">
 
-        <button id="mic-button" class="mic-button" type="button" aria-label="Start voice input">
-          <span class="mic-ring"></span>
-          <span class="mic-icon">🎙</span>
-        </button>
-      </section>
-    </main>
+            <div class="sys-metric">
+              <div class="sys-metric-label">CPU</div>
+              <div class="sys-metric-value" id="metric-cpu">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:24%"></div>
+              </div>
+            </div>
 
-    <script src="./app.js" defer></script>
-  </body>
+            <div class="sys-metric">
+              <div class="sys-metric-label">Memory</div>
+              <div class="sys-metric-value" id="metric-mem">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:55%"></div>
+              </div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Latency</div>
+              <div class="sys-metric-value green" id="metric-net">—</div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">AI Load</div>
+              <div class="sys-metric-value yellow" id="metric-ai">—</div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width:70%"></div>
+              </div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Uptime</div>
+              <div class="sys-metric-value green" id="uptime">00:00:00</div>
+            </div>
+
+            <div class="sys-metric">
+              <div class="sys-metric-label">Version</div>
+              <div class="sys-metric-value">v1.0.0</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Assistant -->
+      <div class="panel voice-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> Voice Assistant
+          </div>
+          <span class="panel-badge idle" id="voice-badge">Standby</span>
+        </div>
+        <div class="panel-body">
+          <button class="voice-orb" id="voice-orb" type="button" title="Tap to activate voice" aria-label="Toggle voice assistant" aria-pressed="false">
+            <span class="voice-orb-icon" aria-hidden="true">🎙</span>
+          </button>
+          <div class="voice-state-label" id="voice-state-label">
+            STATUS: <span>STANDBY</span>
+          </div>
+          <div class="waveform" style="opacity:0.35">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+          <div class="voice-state-label">TAP ORB TO ACTIVATE</div>
+        </div>
+      </div>
+
+    </div><!-- /col-left -->
+
+
+    <!-- ── CENTRE COLUMN ───────────────────── -->
+    <div class="col-center">
+
+      <!-- Daily Briefing -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">▣</span> Daily Briefing
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="btn-briefing-speak" id="briefing-speak" title="Hear briefing">♫ Hear</button>
+            <span class="panel-badge ready" id="briefing-time">Generated</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <p class="briefing-intro">
+            Good day. Here is your intelligence summary for today. Three high-priority
+            items require your attention. AI markets are trending positive.
+            Your opportunity pipeline has two new entries overnight.
+          </p>
+          <div class="briefing-items">
+
+            <div class="briefing-item priority-high">
+              <div class="briefing-item-icon">🔺</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">Funding window closes in 48h</div>
+                <div class="briefing-item-sub">Innovate UK · AI &amp; Productivity Grant — up to £250,000</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-med">
+              <div class="briefing-item-icon">📈</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">AI sector up 2.1% overnight</div>
+                <div class="briefing-item-sub">NVDA +1.8% · MSFT +2.3% · GOOG +1.1% — watchlist active</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-green">
+              <div class="briefing-item-icon">🤝</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">New partnership lead identified</div>
+                <div class="briefing-item-sub">Potential collaboration flagged via LinkedIn signal · Relevance: 91%</div>
+              </div>
+            </div>
+
+            <div class="briefing-item priority-low">
+              <div class="briefing-item-icon">📋</div>
+              <div class="briefing-item-body">
+                <div class="briefing-item-title">3 research reports ready to review</div>
+                <div class="briefing-item-sub">Market trends · Competitor analysis · Weekly digest</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation History -->
+      <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◉</span> Conversation
+          </div>
+          <span class="panel-badge live">Active</span>
+        </div>
+        <div class="panel-body" style="flex:1; display:flex; flex-direction:column;">
+          <!-- Messages rendered by JS from localStorage -->
+          <div class="conv-list" id="conv-list"></div>
+
+          <div class="conv-input-row">
+            <button class="btn-mic" id="btn-mic" type="button" title="Voice input" aria-label="Start voice input"><span aria-hidden="true">🎙</span></button>
+            <input
+              class="conv-input"
+              id="conv-input"
+              type="text"
+              placeholder="Message Friday…"
+              aria-label="Message Friday"
+              enterkeyhint="send"
+              autocomplete="off"
+            />
+            <button class="btn-send" id="btn-send" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col-center -->
+
+
+    <!-- ── RIGHT COLUMN ─────────────────────── -->
+    <div class="col-right">
+
+      <!-- News Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◈</span> News Intelligence
+          </div>
+          <span class="panel-badge beta" id="news-badge">Loading</span>
+        </div>
+        <div class="panel-body">
+          <div class="news-items">
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag ai">AI</span>
+              <div class="news-item-text">
+                <div class="news-item-title">OpenAI releases new reasoning model with 40% efficiency gains</div>
+                <div class="news-item-time">2h ago · techcrunch.com</div>
+              </div>
+            </div>
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag fin">FIN</span>
+              <div class="news-item-text">
+                <div class="news-item-title">UK fintech funding hits £1.2B in Q2 2026</div>
+                <div class="news-item-time">4h ago · ft.com</div>
+              </div>
+            </div>
+
+            <div class="news-item-placeholder">
+              <span class="news-cat-tag tech">TECH</span>
+              <div class="news-item-text">
+                <div class="news-item-title">Agentic AI pipelines are reshaping enterprise workflows</div>
+                <div class="news-item-time">6h ago · wired.com</div>
+              </div>
+            </div>
+
+          </div>
+          <div class="news-connect-cta mt-8">⊕ Connect Live News Feed</div>
+        </div>
+      </div>
+
+      <!-- Weather Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◌</span> Weather
+          </div>
+          <span class="panel-badge idle" id="weather-badge">Offline</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+          <div class="weather-placeholder">
+            <div class="weather-icon-wrap">⛅</div>
+            <div class="weather-info">
+              <div class="weather-temp">— °</div>
+              <div class="weather-desc">Tap Connect for live weather</div>
+            </div>
+            <div class="weather-connect">Connect</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opportunity Scanner -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon">◎</span> Opportunity Scanner
+          </div>
+          <span class="panel-badge ready">Ready</span>
+        </div>
+        <div class="panel-body" style="padding:0;">
+          <div class="scanner-placeholder">
+            <div class="scanner-ring">
+              <div class="scanner-ring-circle"></div>
+              <div class="scanner-ring-sweep"></div>
+              <div class="scanner-ring-dot"></div>
+              <div class="scanner-ring-dot scanner-ring-dot2"></div>
+            </div>
+            <div class="scanner-label">Active Scan Running</div>
+            <div class="scanner-sub">Monitoring 12 sectors · 340+ signals</div>
+            <div class="scanner-sub" style="color:var(--accent-dim);">Next full report in 47 min</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col-right -->
+
+  </div><!-- /main-grid -->
+
+  <!-- ════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════ -->
+  <footer class="footer-bar">
+    <div class="footer-item">
+      <div class="dot"></div>
+      Friday OS v1.0.0
+    </div>
+    <div class="footer-item">
+      Encrypted · End-to-End Secure
+    </div>
+    <div class="footer-item">
+      AI Core: GPT-4o · Voice: en-GB
+    </div>
+    <div class="footer-item">
+      <div class="dot"></div>
+      All Systems Nominal
+    </div>
+  </footer>
+
+</div><!-- /dashboard -->
+
+<!-- ════════════════════════════════════════
+     SETTINGS PANEL
+     ════════════════════════════════════════ -->
+<div id="settings-overlay" class="settings-overlay hidden" aria-hidden="true"></div>
+<aside id="settings-panel" class="settings-panel" role="dialog" aria-label="Settings">
+
+  <div class="settings-hd">
+    <div class="settings-title">⚙ Settings</div>
+    <button class="settings-close" id="settings-close" aria-label="Close settings">✕</button>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- Voice -->
+    <section class="settings-section">
+      <div class="settings-section-label">Voice</div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-voice" style="flex:none;">Voice selection</label>
+        <select id="setting-voice" class="settings-select">
+          <option value="">Auto (British Female)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <label for="setting-rate">Speed <span id="setting-rate-val">0.9</span></label>
+        <input type="range" id="setting-rate" class="settings-range" min="0.5" max="2" step="0.1" value="0.9" />
+      </div>
+
+      <div class="settings-row">
+        <label for="setting-pitch">Pitch <span id="setting-pitch-val">1.1</span></label>
+        <input type="range" id="setting-pitch" class="settings-range" min="0.5" max="2" step="0.1" value="1.1" />
+      </div>
+
+      <button class="settings-btn" id="setting-test-voice">▶ Test Voice</button>
+    </section>
+
+    <!-- Behaviour -->
+    <section class="settings-section">
+      <div class="settings-section-label">Behaviour</div>
+      <div class="settings-row">
+        <label for="setting-autolisten">Auto-listen after response</label>
+        <input type="checkbox" id="setting-autolisten" class="settings-toggle" />
+      </div>
+    </section>
+
+    <!-- Weather -->
+    <section class="settings-section">
+      <div class="settings-section-label">Weather</div>
+      <div class="settings-row">
+        <label>Temperature Units</label>
+      </div>
+      <div class="settings-row settings-radio-group">
+        <label class="settings-radio-label">
+          <input type="radio" name="setting-tempunit" value="F" id="setting-tempunit-f" />
+          Fahrenheit (°F)
+        </label>
+        <label class="settings-radio-label">
+          <input type="radio" name="setting-tempunit" value="C" id="setting-tempunit-c" />
+          Celsius (°C)
+        </label>
+      </div>
+      <button class="settings-btn" id="setting-refresh-weather">↻ Update Location</button>
+    </section>
+
+    <!-- Data -->
+    <section class="settings-section">
+      <div class="settings-section-label">Data</div>
+      <button class="settings-btn settings-btn-danger" id="setting-clear-history">🗑 Clear Conversation History</button>
+    </section>
+
+  </div>
+</aside>
+
+<script src="js/app.js"></script>
+</body>
 </html>
