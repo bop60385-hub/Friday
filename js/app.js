@@ -284,6 +284,7 @@ const VoiceEngine = (() => {
 const Convo = (() => {
   let _msgs    = [];
   const _replyCursor = {};
+  const OPPORTUNITY_INTENT_RE = /\b(opportunit(?:y|ies)|invest(?:ment|ing)?|market(?:s)?|stock(?:s)?|portfolio|watchlist|sector(?:s)?)\b/i;
 
   const OPPORTUNITY_REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
@@ -368,12 +369,17 @@ const Convo = (() => {
     if (!replies.length) return '';
     const lastAi = _lastAiText();
     let idx = _replyCursor[key] || 0;
-    let candidate = replies[idx % replies.length];
-    let tries = 0;
-    while (replies.length > 1 && candidate === lastAi && tries < replies.length) {
-      idx++;
-      tries++;
-      candidate = replies[idx % replies.length];
+    const start = idx % replies.length;
+    let candidate = replies[start];
+    if (replies.length > 1 && candidate === lastAi) {
+      for (let offset = 1; offset < replies.length; offset++) {
+        const next = replies[(start + offset) % replies.length];
+        if (next !== lastAi) {
+          idx = start + offset;
+          candidate = next;
+          break;
+        }
+      }
     }
     _replyCursor[key] = idx + 1;
     return candidate;
@@ -386,7 +392,7 @@ const Convo = (() => {
     if (/\bgood evening\b/i.test(text)) return 'evening';
     if (/\b(thank you|thanks)\b/i.test(text)) return 'thanks';
     if (/\bwhat can you do\b/i.test(text)) return 'capabilities';
-    if (/\b(opportunit(?:y|ies)|invest(?:ment|ing)?|market(?:s)?|stock(?:s)?|portfolio|watchlist|sector(?:s)?)\b/i.test(text)) return 'opportunity';
+    if (OPPORTUNITY_INTENT_RE.test(text)) return 'opportunity';
     return 'general';
   }
 
