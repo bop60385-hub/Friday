@@ -284,6 +284,7 @@ const VoiceEngine = (() => {
 const Convo = (() => {
   let _msgs    = [];
   const NAME_KEY = 'userName';
+  const MAX_NAME_CAPTURE = 40;
 
   const _convList = $('conv-list');
 
@@ -304,7 +305,7 @@ const Convo = (() => {
   }
 
   function _maybeStoreName(text) {
-    const match = text.match(/\b(?:my name is|i am|i'm|call me|it'?s)\s+([a-zA-Z][a-zA-Z'\-\s]{1,40})\b/i);
+    const match = text.match(new RegExp(`\\b(?:my name is|i am|i'm|call me)\\s+([a-zA-Z][a-zA-Z'\\-\\s]{1,${MAX_NAME_CAPTURE}})\\b`, 'i'));
     if (!match) return;
     const name = _fmtName(match[1]);
     if (name) Prefs.set(NAME_KEY, name);
@@ -314,10 +315,8 @@ const Convo = (() => {
     const input = text.trim();
     const name = _name();
     const nameSuffix = name ? `, ${name}` : '';
-    const hour = new Date().getHours();
-
     if (/\b(hello|hi|hey|good morning|good afternoon|good evening)\b/i.test(input)) {
-      return `Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}${nameSuffix}. Systems online.`;
+      return `Good ${_timeGreeting()}${nameSuffix}. Systems online.`;
     }
     if (/\b(how are you|how do you feel|are you okay)\b/i.test(input)) {
       return 'Operating normally and ready to assist.';
@@ -351,8 +350,7 @@ const Convo = (() => {
   }
 
   function _greet() {
-    const h = new Date().getHours();
-    const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    const sal = `Good ${_timeGreeting()}`;
     const name = _name();
     return `${sal}${name ? `, ${name}` : ''}. Systems online. How can I assist?`;
   }
@@ -387,7 +385,10 @@ const Convo = (() => {
     _msgs = Hist.load();
     if (!_name()) {
       for (const msg of _msgs) {
-        if (msg.role === 'user') _maybeStoreName(msg.text || '');
+        if (msg.role === 'user') {
+          _maybeStoreName(msg.text || '');
+          if (_name()) break;
+        }
       }
     }
     if (_msgs.length === 0) {
@@ -778,3 +779,6 @@ if (document.readyState === 'loading') {
 } else {
   bootApp();
 }
+  function _timeGreeting(hour = new Date().getHours()) {
+    return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  }
