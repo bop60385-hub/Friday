@@ -51,8 +51,8 @@ const tsNow = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d
 const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
 const APP_SCRIPT_PATH = '/js/app.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const PersonalityEngine = window.FridayPersonalityEngine || null;
-const defaultReply = () => PersonalityEngine?.defaultResponse?.() || 'Understood. I am ready to assist.';
+const personality = () => window.FridayPersonalityEngine || null;
+const defaultReply = () => personality()?.defaultResponse?.() || 'Understood. I am ready to assist.';
 const APP_ROOT = (() => {
   const currentScript = document.currentScript?.src ||
     document.querySelector(`script[src$="${APP_SCRIPT_PATH}"]`)?.src ||
@@ -289,7 +289,7 @@ const Convo = (() => {
   const _convList = $('conv-list');
 
   function _greet() {
-    return PersonalityEngine?.greeting('startup') || 'FRIDAY online and ready.';
+    return personality()?.greeting('startup') || 'FRIDAY online and ready.';
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -343,9 +343,9 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = PersonalityEngine?.respond(text) || defaultReply();
+      const reply = personality()?.respond(text) || defaultReply();
       _addMsg('ai', reply);
-      PersonalityEngine?.rememberConversation(text, reply);
+      personality()?.rememberConversation(text, reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
   }
@@ -522,9 +522,10 @@ const Settings = (() => {
   }
 
   function init() {
-    const saveVoicePreferences = (voiceName = Prefs.get('voiceName', '')) => {
-      PersonalityEngine?.rememberPreferredVoice({
-        voiceName,
+    const saveVoicePreferences = (voiceName) => {
+      const resolvedVoiceName = voiceName ?? Prefs.get('voiceName', '');
+      personality()?.rememberPreferredVoice({
+        voiceName: resolvedVoiceName,
         lang: 'en-GB',
         rate: parseFloat(Prefs.get('rate', 0.9)),
         pitch: parseFloat(Prefs.get('pitch', 1.0)),
@@ -576,7 +577,7 @@ const Settings = (() => {
 
     /* Test voice */
     $('setting-test-voice')?.addEventListener('click', () =>
-      VoiceEngine.speak(PersonalityEngine?.greeting('timeAware') || "Hello. I'm Friday, your personal intelligence assistant. Ready to assist."));
+      VoiceEngine.speak(personality()?.greeting('timeAware') || "Hello. I'm Friday, your personal intelligence assistant. Ready to assist."));
 
     /* Clear history */
     $('setting-clear-history')?.addEventListener('click', () => {

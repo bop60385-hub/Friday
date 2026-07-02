@@ -191,7 +191,7 @@
 
     respond(userText) {
       const providedName = String(userText || '').match(NAME_CAPTURE_REGEX)?.[1];
-      if (providedName) this.rememberUserName(providedName.charAt(0).toUpperCase() + providedName.slice(1));
+      if (providedName) this.rememberUserName(providedName);
       const intent = inferIntent(userText);
       const profile = this.getProfile();
       const memory = this.getMemory();
