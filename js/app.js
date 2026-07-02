@@ -162,9 +162,23 @@ const VoiceEngine = (() => {
     }
   }
 
+  /* Preferred British female voices, tried in priority order */
+  const PREFERRED_VOICES = [
+    'Google UK English Female',
+    'Microsoft Sonia Online (Natural)',
+    'Microsoft Libby',
+    'Siri British Female',
+    'Karen (UK English)',
+  ];
+
   /* Pick the best British female voice */
   function _pickVoice(preferred) {
     if (preferred) { const v = _voices.find(v => v.name === preferred); if (v) return v; }
+    // Try known high-quality British female voices by name first.
+    for (const name of PREFERRED_VOICES) {
+      const v = _voices.find(v => v.name.toLowerCase() === name.toLowerCase());
+      if (v) return v;
+    }
     const tests = [
       v => v.lang === 'en-GB' && /female|woman|serena|kate|emily|claire/i.test(v.name),
       v => v.lang === 'en-GB',
