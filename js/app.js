@@ -13,6 +13,7 @@ const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
+const BACKEND_URL   = 'https://friday-bop60385-hub.vercel.app/api/chat';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -362,18 +363,36 @@ const Convo = (() => {
     });
   }
 
-  function handleInput(text) {
+  async function handleInput(text) {
     if (!text.trim()) return;
     const inp = $('conv-input');
     if (inp) inp.value = '';
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
-    setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
+
+    const history = _msgs.slice(-20).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+
+    try {
+      console.log('Sending to backend', { message: text });
+      const res = await fetch(BACKEND_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text, history }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log('Backend response received', data);
+      const reply = data.reply || data.message || data.content || REPLIES[_demoIdx % REPLIES.length];
       _demoIdx++;
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
-    }, 800 + Math.random() * 600);
+    } catch (err) {
+      console.error('Backend error', err);
+      const fallback = REPLIES[_demoIdx % REPLIES.length];
+      _demoIdx++;
+      _addMsg('ai', fallback);
+      VoiceEngine.speak(fallback);
+    }
   }
 
   function clearHistory() {
