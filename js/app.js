@@ -284,7 +284,7 @@ const VoiceEngine = (() => {
 const Convo = (() => {
   let _msgs    = [];
   const _replyCursor = {};
-  const OPPORTUNITY_INTENT_RE = /\b(opportunit(?:y|ies)|invest(?:ment|ing)?|market(?:s)?|stock(?:s)?|portfolio|watchlist|sector(?:s)?)\b/i;
+  const OPPORTUNITY_INTENT_REGEX = /\b(opportunit(?:y|ies)|invest(?:ment|ing)?|market(?:s)?|stock(?:s)?|portfolio|watchlist|sector(?:s)?)\b/i;
 
   const OPPORTUNITY_REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
@@ -381,18 +381,22 @@ const Convo = (() => {
         }
       }
     }
+    if (candidate === lastAi) {
+      const backup = GENERAL_REPLIES.find(r => r !== lastAi);
+      if (backup) candidate = backup;
+    }
     _replyCursor[key] = idx + 1;
     return candidate;
   }
 
   function _detectIntent(text) {
-    if (/\b(what(?:'s| is)\s+your\s+name|your name)\b/i.test(text)) return 'name';
+    if (/\b(what(?:'s|\s+is)\s+your\s+name|your name)\b/i.test(text)) return 'name';
     if (/\b(who are you|what are you)\b/i.test(text)) return 'identity';
     if (/\bgood morning\b/i.test(text)) return 'morning';
     if (/\bgood evening\b/i.test(text)) return 'evening';
     if (/\b(thank you|thanks)\b/i.test(text)) return 'thanks';
     if (/\bwhat can you do\b/i.test(text)) return 'capabilities';
-    if (OPPORTUNITY_INTENT_RE.test(text)) return 'opportunity';
+    if (OPPORTUNITY_INTENT_REGEX.test(text)) return 'opportunity';
     return 'general';
   }
 
@@ -422,11 +426,12 @@ const Convo = (() => {
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
       const intent = _detectIntent(text);
-      const reply = intent === 'opportunity'
-        ? _pickReply('opportunity', OPPORTUNITY_REPLIES)
-        : intent === 'general'
-          ? _pickReply('general', GENERAL_REPLIES)
-          : _pickReply(intent, INTENT_REPLIES[intent] || GENERAL_REPLIES);
+      let reply = _pickReply('general', GENERAL_REPLIES);
+      if (intent === 'opportunity') {
+        reply = _pickReply('opportunity', OPPORTUNITY_REPLIES);
+      } else if (intent !== 'general') {
+        reply = _pickReply(intent, INTENT_REPLIES[intent] || GENERAL_REPLIES);
+      }
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
