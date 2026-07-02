@@ -387,14 +387,24 @@
         </select>
       </div>
 
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label style="flex:none;">Active voice</label>
+        <div id="setting-active-voice">Auto</div>
+      </div>
+
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label style="flex:none;">Available voices</label>
+        <pre id="setting-voice-inventory" style="margin:0;max-height:140px;overflow:auto;white-space:pre-wrap;">Loading voices…</pre>
+      </div>
+
       <div class="settings-row">
         <label for="setting-rate">Speed <span id="setting-rate-val">0.9</span></label>
         <input type="range" id="setting-rate" class="settings-range" min="0.5" max="2" step="0.1" value="0.9" />
       </div>
 
       <div class="settings-row">
-        <label for="setting-pitch">Pitch <span id="setting-pitch-val">1.1</span></label>
-        <input type="range" id="setting-pitch" class="settings-range" min="0.5" max="2" step="0.1" value="1.1" />
+        <label for="setting-pitch">Pitch <span id="setting-pitch-val">1.0</span></label>
+        <input type="range" id="setting-pitch" class="settings-range" min="0.5" max="2" step="0.1" value="1.0" />
       </div>
 
       <button class="settings-btn" id="setting-test-voice">▶ Test Voice</button>

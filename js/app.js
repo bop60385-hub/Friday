@@ -144,6 +144,13 @@ const VoiceEngine = (() => {
   let _recognition = null;
   let _isListening = false;
   let _isSpeaking  = false;
+  const PREFERRED_VOICE_ORDER = [
+    v => v.name === 'Google UK English Female',
+    v => v.name.includes('Microsoft Sonia Online (Natural)'),
+    v => v.name.includes('Microsoft Libby'),
+    v => /siri/i.test(v.name) && /british/i.test(v.name) && /female|woman/i.test(v.name),
+    v => v.lang === 'en-GB' && /female|woman|serena|kate|emily|claire|libby|sonia|susan/i.test(v.name),
+  ];
 
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   const canListen = !!SpeechRec;
@@ -153,6 +160,7 @@ const VoiceEngine = (() => {
   function _loadVoices() {
     if (!canSpeak) return;
     _voices = window.speechSynthesis.getVoices();
+    log('info', 'voice', `Enumerated ${_voices.length} speech synthesis voice(s).`, _voices.map(v => `${v.name} [${v.lang}]`));
     window.dispatchEvent(new CustomEvent('friday:voiceschanged', { detail: _voices.slice() }));
   }
   if (canSpeak) {
@@ -163,16 +171,22 @@ const VoiceEngine = (() => {
   }
 
   /* Pick the best British female voice */
+  function _findVoiceByName(name) {
+    return name ? (_voices.find(v => v.name === name) || null) : null;
+  }
+
+  function _findPreferredVoice() {
+    for (const test of PREFERRED_VOICE_ORDER) {
+      const voice = _voices.find(test);
+      if (voice) return voice;
+    }
+    return null;
+  }
+
   function _pickVoice(preferred) {
-    if (preferred) { const v = _voices.find(v => v.name === preferred); if (v) return v; }
-    const tests = [
-      v => v.lang === 'en-GB' && /female|woman|serena|kate|emily|claire/i.test(v.name),
-      v => v.lang === 'en-GB',
-      v => v.lang.startsWith('en-') && /female|woman/i.test(v.name),
-      v => v.lang.startsWith('en-'),
-    ];
-    for (const t of tests) { const v = _voices.find(t); if (v) return v; }
-    return _voices[0] || null;
+    const savedVoice = _findVoiceByName(preferred);
+    if (savedVoice) return savedVoice;
+    return _findPreferredVoice();
   }
 
   /* Speak text with British female voice */
@@ -185,10 +199,15 @@ const VoiceEngine = (() => {
     window.speechSynthesis.cancel();
     const utter    = new SpeechSynthesisUtterance(text);
     const voice    = _pickVoice(Prefs.get('voiceName', null));
-    if (voice) utter.voice = voice;
+    if (voice) {
+      utter.voice = voice;
+    } else {
+      window.dispatchEvent(new CustomEvent('friday:voice-selection-required'));
+      Toast.show('No preferred British female voice was found. Please choose a voice in Settings.', 'warn');
+    }
     utter.lang    = 'en-GB';
     utter.rate    = parseFloat(Prefs.get('rate',  0.9));
-    utter.pitch   = parseFloat(Prefs.get('pitch', 1.1));
+    utter.pitch   = parseFloat(Prefs.get('pitch', 1.0));
     utter.onstart = () => { _isSpeaking = true;  _setOrbState('speaking'); };
     utter.onend   = () => {
       _isSpeaking = false;
@@ -276,6 +295,8 @@ const VoiceEngine = (() => {
     get canListen() { return canListen; },
     get canSpeak()  { return canSpeak;  },
     get voices()    { return _voices;   },
+    resolveVoice(preferred) { return _pickVoice(preferred); },
+    hasPreferredBritishFemaleVoice() { return !!_findPreferredVoice(); },
     setOrbState: _setOrbState,
   };
 })();
@@ -505,8 +526,35 @@ function initBriefing() {
 
 /* ── Settings Panel ──────────────────────────────────────────── */
 const Settings = (() => {
+  let hasPromptedVoiceSelection = false;
+
   function open()  { $('settings-panel')?.classList.add('open'); $('settings-overlay')?.classList.remove('hidden'); }
   function close() { $('settings-panel')?.classList.remove('open'); $('settings-overlay')?.classList.add('hidden'); }
+
+  function updateActiveVoice(voices = VoiceEngine.voices) {
+    const activeEl = $('setting-active-voice');
+    const inventoryEl = $('setting-voice-inventory');
+    const saved = Prefs.get('voiceName', '');
+    const active = VoiceEngine.resolveVoice(saved);
+    if (activeEl) {
+      activeEl.textContent = active ? `${active.name} (${active.lang})` : 'No preferred en-GB female voice available';
+    }
+    if (inventoryEl) {
+      inventoryEl.textContent = voices.length
+        ? voices.map(v => `${v.name} — ${v.lang}${v.default ? ' · default' : ''}`).join('\n')
+        : 'No speechSynthesis voices detected.';
+    }
+  }
+
+  function promptForManualVoiceIfNeeded(voices = VoiceEngine.voices) {
+    const hasSavedVoice = !!Prefs.get('voiceName', '') && voices.some(v => v.name === Prefs.get('voiceName', ''));
+    const hasPreferred = VoiceEngine.hasPreferredBritishFemaleVoice();
+    if (!hasSavedVoice && !hasPreferred && !hasPromptedVoiceSelection) {
+      hasPromptedVoiceSelection = true;
+      open();
+      Toast.show('Please select a voice in Settings and it will be saved locally.', 'warn');
+    }
+  }
 
   function populateVoiceList(voices) {
     const sel = $('setting-voice');
@@ -529,19 +577,25 @@ const Settings = (() => {
     };
     addGrp('British English', gb);
     addGrp('Other English',   en);
-    addGrp('Other',           other.slice(0, 10));
+    addGrp('Other',           other);
     if (saved) sel.value = saved;
+    updateActiveVoice(voices);
+    promptForManualVoiceIfNeeded(voices);
   }
 
   function init() {
     if (VoiceEngine.voices.length) populateVoiceList(VoiceEngine.voices);
     window.addEventListener('friday:voiceschanged', e => populateVoiceList(e.detail || VoiceEngine.voices));
+    window.addEventListener('friday:voice-selection-required', () => open());
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
     $('settings-overlay')?.addEventListener('click', close);
 
     /* Voice selection */
-    $('setting-voice')?.addEventListener('change', e => Prefs.set('voiceName', e.target.value));
+    $('setting-voice')?.addEventListener('change', e => {
+      Prefs.set('voiceName', e.target.value);
+      updateActiveVoice();
+    });
 
     /* Rate */
     const rateEl = $('setting-rate'), rateLbl = $('setting-rate-val');
@@ -554,7 +608,7 @@ const Settings = (() => {
     /* Pitch */
     const pitchEl = $('setting-pitch'), pitchLbl = $('setting-pitch-val');
     if (pitchEl) {
-      pitchEl.value = Prefs.get('pitch', 1.1);
+      pitchEl.value = Prefs.get('pitch', 1.0);
       if (pitchLbl) pitchLbl.textContent = pitchEl.value;
       pitchEl.addEventListener('input', e => { Prefs.set('pitch', parseFloat(e.target.value)); if (pitchLbl) pitchLbl.textContent = e.target.value; });
     }
