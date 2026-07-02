@@ -13,7 +13,7 @@ const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
-const AI_UNAVAILABLE_MESSAGE = "I'm unable to access my advanced intelligence systems at the moment.";
+const ASSISTANT_MODE_LOCAL = 'local';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -357,10 +357,14 @@ const Convo = (() => {
     VoiceEngine.setOrbState('processing');
     setTimeout(async () => {
       let reply = REPLIES[_demoIdx % REPLIES.length];
-      const mode = window.APIService?.getMode?.() || Prefs.get('assistantMode', 'local');
+      const mode = window.APIService?.getMode?.() || ASSISTANT_MODE_LOCAL;
       if (mode === 'ai' && window.APIService?.sendMessage) {
-        const result = await window.APIService.sendMessage({ message: text, history: _msgs });
-        reply = result?.ok ? result.text : (result?.text || AI_UNAVAILABLE_MESSAGE);
+        try {
+          const result = await window.APIService.sendMessage({ message: text, history: _msgs });
+          reply = result?.text || window.APIService.AI_UNAVAILABLE_MESSAGE;
+        } catch {
+          reply = window.APIService.AI_UNAVAILABLE_MESSAGE;
+        }
       } else {
         _demoIdx++;
       }
@@ -598,16 +602,17 @@ const Settings = (() => {
     }
 
     if (aiModeToggle) {
-      const selectedMode = window.APIService?.getMode?.() || Prefs.get('assistantMode', 'local');
+      const syncAiModeLabel = enabled => {
+        if (aiModeLabel) aiModeLabel.textContent = enabled ? 'AI Mode' : 'Local Mode';
+      };
+      const selectedMode = window.APIService?.getMode?.() || ASSISTANT_MODE_LOCAL;
       aiModeToggle.checked = selectedMode === 'ai';
       aiModeToggle.disabled = !hasApiService;
-      if (aiModeLabel) aiModeLabel.textContent = aiModeToggle.checked ? 'AI Mode' : 'Local Mode';
-      Prefs.set('assistantMode', aiModeToggle.checked ? 'ai' : 'local');
+      syncAiModeLabel(aiModeToggle.checked);
       aiModeToggle.addEventListener('change', e => {
         const mode = e.target.checked ? 'ai' : 'local';
-        Prefs.set('assistantMode', mode);
         window.APIService?.setMode?.(mode);
-        if (aiModeLabel) aiModeLabel.textContent = e.target.checked ? 'AI Mode' : 'Local Mode';
+        syncAiModeLabel(e.target.checked);
         Toast.show(e.target.checked ? 'AI Mode enabled.' : 'Local Mode enabled.', 'info');
       });
     }

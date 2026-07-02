@@ -3,6 +3,9 @@
 (() => {
   const STORAGE_KEY = 'friday_ai_settings';
   const AI_UNAVAILABLE_MESSAGE = "I'm unable to access my advanced intelligence systems at the moment.";
+  const DEFAULT_TIMEOUT_MS = 12000;
+  // Keep a short rolling window of conversation context for backend requests.
+  const MAX_HISTORY_MESSAGES = 10;
 
   const PROVIDERS = [
     { id: 'friday-secure-backend', label: 'Friday Secure Backend', endpoint: '/api/ai/chat' },
@@ -12,7 +15,7 @@
     mode: 'local',
     provider: PROVIDERS[0].id,
     endpoint: PROVIDERS[0].endpoint,
-    timeoutMs: 12000,
+    timeoutMs: DEFAULT_TIMEOUT_MS,
   };
 
   const APP_SCRIPT_PATH = '/js/apiService.js';
@@ -72,11 +75,15 @@
 
   async function sendMessage({ message, history = [] }) {
     const settings = getSettings();
-    if (settings.mode !== 'ai') return { ok: true, mode: 'local', text: '' };
+    if (settings.mode !== 'ai') return { ok: true, mode: 'local', text: '', skipped: true };
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), settings.timeoutMs);
     try {
+      const trimmedHistory = history.length > MAX_HISTORY_MESSAGES
+        ? history.slice(-MAX_HISTORY_MESSAGES)
+        : history;
+
       const response = await fetch(withRoot(settings.endpoint), {
         method: 'POST',
         headers: {
@@ -88,20 +95,23 @@
         signal: controller.signal,
         body: JSON.stringify({
           message,
-          history: history.slice(-10).map(({ role, text, time }) => ({ role, text, time })),
+          history: trimmedHistory,
         }),
       });
 
       if (!response.ok) throw new Error(`AI backend error: ${response.status}`);
       const payload = await response.json();
-      const reply = typeof payload?.reply === 'string'
-        ? payload.reply.trim()
-        : typeof payload?.message === 'string'
-          ? payload.message.trim()
-          : '';
+      // Expected contract: { reply: string }. `message` is accepted for compatibility.
+      let reply = '';
+      if (typeof payload?.reply === 'string') {
+        reply = payload.reply.trim();
+      } else if (typeof payload?.message === 'string') {
+        reply = payload.message.trim();
+      }
       if (!reply) throw new Error('AI backend returned an empty reply.');
       return { ok: true, mode: 'ai', text: reply };
-    } catch {
+    } catch (error) {
+      console.warn('[Friday][ai] Secure backend request failed.', error);
       return { ok: false, mode: 'ai', text: AI_UNAVAILABLE_MESSAGE };
     } finally {
       clearTimeout(timeout);
