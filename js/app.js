@@ -328,10 +328,15 @@ const Convo = (() => {
       <div class="conv-bubble">
         <div class="conv-meta">
           <span>${isAI ? 'FRIDAY' : 'YOU'}</span> · ${esc(msg.time)}
-          ${isAI ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
+          ${isAI ? `<button class="btn-speak-msg" title="Speak this message">♫</button>` : ''}
         </div>
-        <div class="conv-text">${esc(msg.text)}</div>
+        <div class="conv-text"></div>
       </div>`;
+    el.querySelector('.conv-text').textContent = msg.text;
+    if (isAI) {
+      const btn = el.querySelector('.btn-speak-msg');
+      if (btn) btn.dataset.text = msg.text;
+    }
     _convList.appendChild(el);
     if (scroll) _convList.scrollTop = _convList.scrollHeight;
   }
