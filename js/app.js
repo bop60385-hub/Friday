@@ -54,8 +54,7 @@ const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const APP_ROOT = (() => {
   const currentScript = document.currentScript?.src || new URL(APP_SCRIPT_PATH, window.location.href).toString();
   const scriptPath = new URL(currentScript, window.location.href).pathname;
-  const rawRoot = scriptPath.replace(new RegExp(`${escapeRegExp(APP_SCRIPT_PATH)}$`), '').replace(/\/$/, '');
-  return rawRoot === '/' ? '' : rawRoot;
+  return scriptPath.replace(new RegExp(`${escapeRegExp(APP_SCRIPT_PATH)}$`), '').replace(/\/$/, '');
 })();
 const withRoot = path => {
   const normalizedPath = path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`;
@@ -203,7 +202,7 @@ const VoiceEngine = (() => {
   function startListening() {
     if (!canListen) {
       log('warn', 'voice', 'Speech recognition API is unavailable.');
-      Toast.show('Voice input is not available in this browser. You can still type messages.', 'warn');
+      Toast.show('Voice input is unavailable. Please use typed input.', 'warn');
       return false;
     }
     if (_isListening) return true;
@@ -644,7 +643,7 @@ function initVoiceOrb() {
   }
   orb.addEventListener('click', () => {
     if (!VoiceEngine.canListen) {
-      Toast.show('Voice recognition is not available in this browser. Try Chrome or iOS Safari 14.5+.', 'warn');
+      Toast.show('Voice input is unavailable. Please use typed input.', 'warn');
       return;
     }
     VoiceEngine.toggleListening();
@@ -667,7 +666,7 @@ function initConvInput() {
   send?.addEventListener('click', () => { if (inp) Convo.handleInput(inp.value.trim()); });
   inp?.addEventListener('keydown', e => { if (e.key === 'Enter') Convo.handleInput(inp.value.trim()); });
   mic?.addEventListener('click',  () => {
-    if (!VoiceEngine.canListen) { Toast.show('Voice input not available in this browser.', 'warn'); return; }
+    if (!VoiceEngine.canListen) { Toast.show('Voice input is unavailable. Please use typed input.', 'warn'); return; }
     VoiceEngine.toggleListening();
   });
 }

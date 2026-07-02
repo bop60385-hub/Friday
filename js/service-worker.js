@@ -13,7 +13,7 @@ if (!hasExpectedPath) {
 const RAW_APP_ROOT = self.location.pathname
   .replace(new RegExp(`${escapeRegExp(SERVICE_WORKER_PATH)}$`), '')
   .replace(/\/$/, '');
-const APP_ROOT = RAW_APP_ROOT === '/' ? '' : RAW_APP_ROOT;
+const APP_ROOT = RAW_APP_ROOT;
 const withRoot = path => {
   const normalizedPath = path === '/' ? '/' : path.startsWith('/') ? path : `/${path}`;
   return `${APP_ROOT}${normalizedPath}`;
