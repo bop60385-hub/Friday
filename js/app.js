@@ -52,7 +52,9 @@ const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
 const APP_SCRIPT_PATH = '/js/app.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const APP_ROOT = (() => {
-  const currentScript = document.currentScript?.src || new URL(APP_SCRIPT_PATH, window.location.href).toString();
+  const currentScript = document.currentScript?.src ||
+    document.querySelector(`script[src$="${APP_SCRIPT_PATH}"]`)?.src ||
+    window.location.href;
   const scriptPath = new URL(currentScript, window.location.href).pathname;
   return scriptPath.replace(new RegExp(`${escapeRegExp(APP_SCRIPT_PATH)}$`), '').replace(/\/$/, '');
 })();
