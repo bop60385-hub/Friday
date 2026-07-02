@@ -363,6 +363,11 @@ const Convo = (() => {
     });
   }
 
+  function _deliverReply(text) {
+    _addMsg('ai', text);
+    VoiceEngine.speak(text);
+  }
+
   async function handleInput(text) {
     if (!text.trim()) return;
     const inp = $('conv-input');
@@ -370,7 +375,11 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
 
-    const history = _msgs.slice(-20).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+    /* Map internal roles to OpenAI-style roles expected by the backend */
+    const history = _msgs.slice(-20).map(m => ({
+      role:    m.role === 'ai' ? 'assistant' : 'user',
+      content: m.text,
+    }));
 
     try {
       console.log('Sending to backend', { message: text });
@@ -382,16 +391,12 @@ const Convo = (() => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       console.log('Backend response received', data);
-      const reply = data.reply || data.message || data.content || REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
-      _addMsg('ai', reply);
-      VoiceEngine.speak(reply);
+      /* Backend returns { reply } — fall back through common field names defensively */
+      const reply = data.reply || data.message || data.content || REPLIES[_demoIdx++ % REPLIES.length];
+      _deliverReply(reply);
     } catch (err) {
       console.error('Backend error', err);
-      const fallback = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
-      _addMsg('ai', fallback);
-      VoiceEngine.speak(fallback);
+      _deliverReply(REPLIES[_demoIdx++ % REPLIES.length]);
     }
   }
 
