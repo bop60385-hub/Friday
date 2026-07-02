@@ -529,14 +529,31 @@ const Settings = (() => {
     $('settings-overlay')?.addEventListener('click', close);
 
     /* Voice selection */
-    $('setting-voice')?.addEventListener('change', e => Prefs.set('voiceName', e.target.value));
+    $('setting-voice')?.addEventListener('change', e => {
+      Prefs.set('voiceName', e.target.value);
+      PersonalityEngine?.rememberPreferredVoice({
+        voiceName: e.target.value,
+        lang: 'en-GB',
+        rate: parseFloat(Prefs.get('rate', 0.9)),
+        pitch: parseFloat(Prefs.get('pitch', 1.0)),
+      });
+    });
 
     /* Rate */
     const rateEl = $('setting-rate'), rateLbl = $('setting-rate-val');
     if (rateEl) {
       rateEl.value = Prefs.get('rate', 0.9);
       if (rateLbl) rateLbl.textContent = rateEl.value;
-      rateEl.addEventListener('input', e => { Prefs.set('rate', parseFloat(e.target.value)); if (rateLbl) rateLbl.textContent = e.target.value; });
+      rateEl.addEventListener('input', e => {
+        Prefs.set('rate', parseFloat(e.target.value));
+        PersonalityEngine?.rememberPreferredVoice({
+          voiceName: Prefs.get('voiceName', ''),
+          lang: 'en-GB',
+          rate: parseFloat(e.target.value),
+          pitch: parseFloat(Prefs.get('pitch', 1.0)),
+        });
+        if (rateLbl) rateLbl.textContent = e.target.value;
+      });
     }
 
     /* Pitch */
@@ -544,7 +561,16 @@ const Settings = (() => {
     if (pitchEl) {
       pitchEl.value = Prefs.get('pitch', 1.0);
       if (pitchLbl) pitchLbl.textContent = pitchEl.value;
-      pitchEl.addEventListener('input', e => { Prefs.set('pitch', parseFloat(e.target.value)); if (pitchLbl) pitchLbl.textContent = e.target.value; });
+      pitchEl.addEventListener('input', e => {
+        Prefs.set('pitch', parseFloat(e.target.value));
+        PersonalityEngine?.rememberPreferredVoice({
+          voiceName: Prefs.get('voiceName', ''),
+          lang: 'en-GB',
+          rate: parseFloat(Prefs.get('rate', 0.9)),
+          pitch: parseFloat(e.target.value),
+        });
+        if (pitchLbl) pitchLbl.textContent = e.target.value;
+      });
     }
 
     /* Auto-listen */

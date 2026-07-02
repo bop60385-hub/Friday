@@ -169,6 +169,8 @@
     },
 
     respond(userText) {
+      const providedName = String(userText || '').match(/\bmy name is\s+([a-z][a-z\-']{1,30})\b/i)?.[1];
+      if (providedName) this.rememberUserName(providedName.charAt(0).toUpperCase() + providedName.slice(1));
       const intent = inferIntent(userText);
       const profile = this.getProfile();
       const memory = this.getMemory();
