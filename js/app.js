@@ -295,6 +295,7 @@ const VoiceEngine = (() => {
 })();
 
 /* ── Intent Engine ───────────────────────────────────────────── */
+const MIN_CONFIDENCE_THRESHOLD = 0.45;
 const IntentEngine = (() => {
   const INTENTS = [
     {
@@ -369,15 +370,18 @@ const IntentEngine = (() => {
     },
   ];
 
+  const DEFAULT_CONFIDENCE   = 0.2;
+  const MULTI_MATCH_BOOST    = 1.15;
+
   function classify(text) {
-    let best = { intent: 'general', confidence: 0.2 };
+    let best = { intent: 'general', confidence: DEFAULT_CONFIDENCE };
     for (const def of INTENTS) {
       let hits = 0;
       for (const pattern of def.patterns) {
         if (pattern.test(text)) hits++;
       }
       if (hits === 0) continue;
-      const confidence = Math.min(def.weight * (hits > 1 ? 1.15 : 1), 1.0);
+      const confidence = Math.min(def.weight * (hits > 1 ? MULTI_MATCH_BOOST : 1), 1.0);
       if (confidence > best.confidence) {
         best = { intent: def.name, confidence };
       }
@@ -425,7 +429,7 @@ const IntentHandlers = (() => {
   function news() {
     const headlines = NewsWidget.getSummary();
     if (headlines && headlines.length) {
-      const list = headlines.map((h, i) => `${i + 1}. ${h}`).join(' ');
+      const list = headlines.map((h, i) => `${i + 1}. ${h}`).join('; ');
       return `Here are the top stories right now: ${list} Shall I go deeper on any of these?`;
     }
     return _pick([
@@ -556,7 +560,7 @@ const Convo = (() => {
     VoiceEngine.setOrbState('processing');
     const { intent, confidence } = IntentEngine.classify(text);
     setTimeout(() => {
-      const reply = confidence < 0.45
+      const reply = confidence < MIN_CONFIDENCE_THRESHOLD
         ? "I'm not certain I understood. Could you rephrase that?"
         : IntentHandlers.handle(intent);
       _addMsg('ai', reply);
