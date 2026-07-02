@@ -397,6 +397,7 @@ const Weather = (() => {
 
   function _formatManualLabel(city, state, zip) {
     const cityState = [city, state].filter(Boolean).join(', ');
+    if (!cityState && !zip) return '';
     if (!zip) return cityState;
     if (!cityState) return zip;
     return `${cityState} ${zip}`;
@@ -408,6 +409,7 @@ const Weather = (() => {
     const lat = Number(latRaw);
     const lon = Number(lonRaw);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
     return { lat, lon };
   }
 
@@ -429,8 +431,14 @@ const Weather = (() => {
     overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 
-  function _openManualDialog() {
+  function _openManualDialog(reason = 'manual-entry') {
     _setDialogVisible(true);
+    const title = $('location-dialog-title');
+    if (title) {
+      title.textContent = reason === 'geolocation-failed'
+        ? 'Unable to access your location. Enter your city or ZIP code.'
+        : 'Enter your city, state, or ZIP code.';
+    }
     const city = $('location-city');
     const state = $('location-state');
     const zip = $('location-zip');
@@ -446,13 +454,13 @@ const Weather = (() => {
 
   async function _resolveManualLocation(city, state, zip) {
     const query = [city, state, zip].filter(Boolean).join(', ');
-    if (!query) throw new Error('missing-manual-location');
+    if (!query) throw new Error('At least one location field is required.');
     const url = `${GEOCODE_SEARCH_API}?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('manual-location-lookup-failed');
+    if (!res.ok) throw new Error(`Manual location lookup failed with status ${res.status}.`);
     const data = await res.json();
     const match = data.results?.[0];
-    if (!match) throw new Error('manual-location-not-found');
+    if (!match) throw new Error(`Location not found for query: ${query}`);
     return match;
   }
 
@@ -483,9 +491,9 @@ const Weather = (() => {
     const manualLabel = _formatManualLabel(city, state, zip) || resolvedLabel;
     Prefs.set('wLat', lat);
     Prefs.set('wLon', lon);
-    Prefs.set('wCity', city || resolved.name || '');
-    Prefs.set('wState', state || resolved.admin1 || '');
-    Prefs.set('wZip', zip || resolved.postcode || '');
+    Prefs.set('wCity', city);
+    Prefs.set('wState', state);
+    Prefs.set('wZip', zip);
     Prefs.set('wLocationLabel', manualLabel);
     try {
       const reverseCity = await _fetchCity(lat, lon);
@@ -498,7 +506,7 @@ const Weather = (() => {
   }
 
   async function requestLocation() {
-    if (!navigator.geolocation) { _openManualDialog(); return; }
+    if (!navigator.geolocation) { _openManualDialog('geolocation-failed'); return; }
     navigator.geolocation.getCurrentPosition(async pos => {
       const { latitude: lat, longitude: lon } = pos.coords;
       Prefs.set('wLat', lat);
@@ -512,8 +520,11 @@ const Weather = (() => {
         const c = data.current;
         _updateUI(c.temperature_2m, c.weathercode, city);
         Toast.show(`Weather updated — ${city || 'your location'}`, 'info');
-      } catch { Toast.show('Could not fetch weather data.', 'warn'); }
-    }, () => _openManualDialog());
+      } catch (err) {
+        log('warn', 'weather', 'Weather fetch failed for geolocation request.', err);
+        Toast.show('Could not fetch weather data.', 'warn');
+      }
+    }, () => _openManualDialog('geolocation-failed'));
   }
 
   async function refreshWeather() {
@@ -542,14 +553,15 @@ const Weather = (() => {
     try {
       await _saveAndApplyManualLocation(city, state, zip);
       _closeManualDialog();
-    } catch {
+    } catch (err) {
+      log('warn', 'weather', 'Manual location submission failed.', err);
       Toast.show('Unable to find that location.', 'warn');
     }
   }
 
   async function init() {
     $('weather-connect-btn')?.addEventListener('click', requestLocation);
-    $('weather-change-btn')?.addEventListener('click', _openManualDialog);
+    $('weather-change-btn')?.addEventListener('click', () => _openManualDialog());
     $('weather-refresh-btn')?.addEventListener('click', refreshWeather);
     $('location-overlay')?.addEventListener('click', _closeManualDialog);
     $('location-cancel')?.addEventListener('click', _closeManualDialog);
@@ -559,7 +571,9 @@ const Weather = (() => {
       try {
         await _fetchAndRenderWeather(coords.lat, coords.lon);
         _showControls(true);
-      } catch {}
+      } catch (err) {
+        log('warn', 'weather', 'Failed to hydrate weather from saved coordinates.', err);
+      }
     } else {
       _showControls(false);
     }
