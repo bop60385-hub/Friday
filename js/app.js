@@ -51,6 +51,7 @@ const tsNow = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d
 const rnd   = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
 const APP_SCRIPT_PATH = '/js/app.js';
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PersonalityEngine = window.FridayPersonalityEngine || null;
 const APP_ROOT = (() => {
   const currentScript = document.currentScript?.src ||
     document.querySelector(`script[src$="${APP_SCRIPT_PATH}"]`)?.src ||
@@ -188,7 +189,7 @@ const VoiceEngine = (() => {
     if (voice) utter.voice = voice;
     utter.lang    = 'en-GB';
     utter.rate    = parseFloat(Prefs.get('rate',  0.9));
-    utter.pitch   = parseFloat(Prefs.get('pitch', 1.1));
+    utter.pitch   = parseFloat(Prefs.get('pitch', 1.0));
     utter.onstart = () => { _isSpeaking = true;  _setOrbState('speaking'); };
     utter.onend   = () => {
       _isSpeaking = false;
@@ -283,25 +284,11 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   let _msgs    = [];
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
 
   const _convList = $('conv-list');
 
   function _greet() {
-    const h = new Date().getHours();
-    const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+    return PersonalityEngine?.greeting('startup') || 'FRIDAY online and ready.';
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -355,9 +342,10 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = PersonalityEngine?.respond(text) ||
+        "Understood. Based on what's available, my recommendation is to proceed with the clearest low-risk option first, then review the outcome.";
       _addMsg('ai', reply);
+      PersonalityEngine?.rememberConversation(text, reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
   }
@@ -554,7 +542,7 @@ const Settings = (() => {
     /* Pitch */
     const pitchEl = $('setting-pitch'), pitchLbl = $('setting-pitch-val');
     if (pitchEl) {
-      pitchEl.value = Prefs.get('pitch', 1.1);
+      pitchEl.value = Prefs.get('pitch', 1.0);
       if (pitchLbl) pitchLbl.textContent = pitchEl.value;
       pitchEl.addEventListener('input', e => { Prefs.set('pitch', parseFloat(e.target.value)); if (pitchLbl) pitchLbl.textContent = e.target.value; });
     }
@@ -568,7 +556,7 @@ const Settings = (() => {
 
     /* Test voice */
     $('setting-test-voice')?.addEventListener('click', () =>
-      VoiceEngine.speak("Hello. I'm Friday, your personal intelligence assistant. Ready to assist."));
+      VoiceEngine.speak(PersonalityEngine?.greeting('timeAware') || "Hello. I'm Friday, your personal intelligence assistant. Ready to assist."));
 
     /* Clear history */
     $('setting-clear-history')?.addEventListener('click', () => {
