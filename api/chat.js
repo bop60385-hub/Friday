@@ -24,16 +24,16 @@ function parseBody(body) {
     } catch {
       return {};
     }
-
-    function getOpenAIErrorMessage(status, errorType) {
-      if (status === 401 || errorType === 'invalid_request_error') return 'OpenAI authentication failed';
-      if (status === 429 || errorType === 'rate_limit_error') return 'OpenAI rate limit exceeded';
-      if (status >= 500) return 'OpenAI service unavailable';
-      return 'OpenAI request failed';
-    }
   }
   if (typeof body === 'object') return body;
   return {};
+}
+
+function getOpenAIErrorMessage(status, errorType) {
+  if (status === 401 || errorType === 'invalid_request_error') return 'OpenAI authentication failed';
+  if (status === 429 || errorType === 'rate_limit_error') return 'OpenAI rate limit exceeded';
+  if (status >= 500) return 'OpenAI service unavailable';
+  return 'OpenAI request failed';
 }
 
 module.exports = async function handler(req, res) {
