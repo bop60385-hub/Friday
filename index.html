@@ -403,6 +403,14 @@
     <!-- Behaviour -->
     <section class="settings-section">
       <div class="settings-section-label">Behaviour</div>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:5px;">
+        <label for="setting-mode" style="flex:none;">Operating mode</label>
+        <select id="setting-mode" class="settings-select">
+          <option value="assistant">Assistant</option>
+          <option value="analyst">Analyst</option>
+          <option value="companion">Companion</option>
+        </select>
+      </div>
       <div class="settings-row">
         <label for="setting-autolisten">Auto-listen after response</label>
         <input type="checkbox" id="setting-autolisten" class="settings-toggle" />

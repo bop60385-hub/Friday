@@ -285,23 +285,68 @@ const Convo = (() => {
   let _msgs    = [];
   let _demoIdx = 0;
 
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
+  const MODE_REPLIES = {
+    assistant: [
+      "Absolutely. I can help with that right away. What would you like to do first?",
+      "Got it. I can assist with daily planning, reminders, and quick answers whenever you need.",
+      "I can break this down into simple next steps for you—would you like a quick or detailed version?",
+    ],
+    analyst: [
+      "Here is the high-level analysis: trend is positive, but volatility remains elevated in the near term.",
+      "For financial and world-event context, I suggest comparing recent headlines against market reaction over the last 24 hours.",
+      "I can research this with a structured summary: key signals, risks, and likely next scenarios.",
+    ],
+    companion: [
+      "You're doing well. Take a breath, and we can go one step at a time.",
+      "That sounds important. If you'd like, we can reflect on what matters most right now.",
+      "I'm here with you. Want to talk it through or focus on one small next step?",
+    ],
+  };
+
+  function _getMode() {
+    const mode = Prefs.get('mode', 'assistant');
+    return MODE_REPLIES[mode] ? mode : 'assistant';
+  }
 
   const _convList = $('conv-list');
 
   function _greet() {
     const h = new Date().getHours();
     const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+    const mode = _getMode();
+    const intro = {
+      assistant: "I'm Friday, your personal assistant for everyday support.",
+      analyst: "I'm Friday, your analysis assistant for research, financial topics, and world events.",
+      companion: "I'm Friday, your companion for encouragement, reflection, and conversation.",
+    };
+    return `${sal}. ${intro[mode]} I'm online and ready. How can I help today?`;
+  }
+
+  function _resolveReply(text) {
+    const mode = _getMode();
+    const input = text.toLowerCase();
+
+    if (mode === 'analyst') {
+      if (/news|headline|world|event/.test(input)) return "I can analyze the latest events by separating facts, signals, and likely outcomes. Which topic should we start with?";
+      if (/finance|market|stock|invest|economy|crypto/.test(input)) return "For this financial topic, I can give you a quick view of trend, risk, and opportunity to support your decision-making.";
+      if (/research|analy[sz]e|report|compare/.test(input)) return "I'll approach this like a research brief: objective, evidence, interpretation, and recommendation.";
+    }
+
+    if (mode === 'companion') {
+      if (/stress|tired|overwhelmed|anxious|worried/.test(input)) return "Thanks for sharing that. You're not alone—let's slow down and focus on one manageable next step.";
+      if (/reflect|journal|think|purpose/.test(input)) return "Let's reflect together: what feels most important to you right now, and why?";
+      if (/chat|talk|conversation/.test(input)) return "Of course. I'm here to talk—what's on your mind?";
+    }
+
+    if (mode === 'assistant') {
+      if (/help|assist|support/.test(input)) return "Absolutely. Tell me what you need, and I'll help you tackle it efficiently.";
+      if (/today|plan|schedule|task|remind/.test(input)) return "Great idea. We can organize your day into a simple prioritized plan.";
+    }
+
+    const replies = MODE_REPLIES[mode];
+    const reply = replies[_demoIdx % replies.length];
+    _demoIdx++;
+    return reply;
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -355,8 +400,7 @@ const Convo = (() => {
     _addMsg('user', text);
     VoiceEngine.setOrbState('processing');
     setTimeout(() => {
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
+      const reply = _resolveReply(text);
       _addMsg('ai', reply);
       VoiceEngine.speak(reply);
     }, 800 + Math.random() * 600);
@@ -534,11 +578,22 @@ const Settings = (() => {
   }
 
   function init() {
+    if (!Prefs.get('mode', null)) Prefs.set('mode', 'assistant');
     if (VoiceEngine.voices.length) populateVoiceList(VoiceEngine.voices);
     window.addEventListener('friday:voiceschanged', e => populateVoiceList(e.detail || VoiceEngine.voices));
     $('btn-settings')?.addEventListener('click', open);
     $('settings-close')?.addEventListener('click', close);
     $('settings-overlay')?.addEventListener('click', close);
+
+    /* Operating mode */
+    const modeEl = $('setting-mode');
+    if (modeEl) {
+      modeEl.value = Prefs.get('mode', 'assistant');
+      modeEl.addEventListener('change', e => {
+        Prefs.set('mode', e.target.value);
+        Toast.show(`Mode switched to ${e.target.value}.`, 'info');
+      });
+    }
 
     /* Voice selection */
     $('setting-voice')?.addEventListener('change', e => Prefs.set('voiceName', e.target.value));
