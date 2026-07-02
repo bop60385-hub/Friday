@@ -285,6 +285,14 @@ const Convo = (() => {
   let _msgs    = [];
   let _demoIdx = 0;
 
+  const INTRO_LINES = [
+    "Hello Benny.",
+    "My name is FRIDAY.",
+    "I'm your personal intelligence assistant.",
+    "I can help you stay informed, organized, and prepared.",
+    "How may I assist you today?",
+  ];
+
   const REPLIES = [
     "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
     "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
@@ -302,6 +310,16 @@ const Convo = (() => {
     const h = new Date().getHours();
     const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
     return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+  }
+
+  function _showIntro() {
+    Prefs.set('introSeen', true);
+    const lineDelay = 600;
+    INTRO_LINES.forEach((line, i) => {
+      setTimeout(() => _addMsg('ai', line), i * lineDelay);
+    });
+    /* Start speaking slightly after the first line appears so audio and text stay in sync */
+    setTimeout(() => VoiceEngine.speak(INTRO_LINES.join(' ')), 400);
   }
 
   function _renderMsg(msg, scroll = true) {
@@ -332,7 +350,8 @@ const Convo = (() => {
 
   function init() {
     _msgs = Hist.load();
-    if (_msgs.length === 0) {
+    const firstLaunch = _msgs.length === 0 && !Prefs.get('introSeen', false);
+    if (_msgs.length === 0 && !firstLaunch) {
       _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
       Hist.save(_msgs);
     }
@@ -346,6 +365,7 @@ const Convo = (() => {
       const btn = e.target.closest('.btn-speak-msg');
       if (btn) VoiceEngine.speak(btn.dataset.text || '');
     });
+    if (firstLaunch) _showIntro();
   }
 
   function handleInput(text) {
