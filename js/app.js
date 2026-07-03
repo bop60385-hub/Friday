@@ -322,6 +322,7 @@ const Convo = (() => {
   function _renderMsg(msg, scroll = true) {
     if (!_convList) return;
     const isAI = msg.role === 'ai';
+    const showSpeakButton = isAI && !msg.pending;
     const el   = document.createElement('div');
     el.className = 'conv-msg';
     el.innerHTML = `
@@ -329,7 +330,7 @@ const Convo = (() => {
       <div class="conv-bubble">
         <div class="conv-meta">
           <span>${isAI ? 'FRIDAY' : 'YOU'}</span> · ${esc(msg.time)}
-          ${isAI ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
+          ${showSpeakButton ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
         </div>
         <div class="conv-text">${esc(msg.text)}</div>
       </div>`;
@@ -411,7 +412,7 @@ const Convo = (() => {
     const userMessage = text.trim();
     _addMsg('user', userMessage);
     VoiceEngine.setOrbState('processing');
-    const thinkingEl = _renderMsg({ role: 'ai', text: 'Thinking...', time: tsNow() });
+    const thinkingEl = _renderMsg({ role: 'ai', text: 'Thinking...', time: tsNow(), pending: true });
     try {
       const reply = await _fetchReply(userMessage);
       _removeRenderedMsg(thinkingEl);
