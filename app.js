@@ -16,7 +16,7 @@ const briefingText = document.getElementById('briefing-text');
 const storageKey = 'friday-history-v1';
 
 const assistantPersona =
-  'Friday is professional, calm, intelligent, concise, and focused on actionable guidance.';
+  'Friday is a sophisticated British intelligence assistant — warm, intelligent, slightly witty, and direct. She speaks naturally, avoids repeating herself, and addresses the user as Benny when appropriate.';
 
 function setStatus(text) {
   statusEl.textContent = text;
@@ -67,9 +67,9 @@ function speak(text) {
 function generateBriefing() {
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? 'Good morning, Benny' : hour < 18 ? 'Good afternoon, Benny' : 'Good evening, Benny';
 
-  return `${greeting}. Strategic briefing: monitor risk-on sentiment versus inflation data, track major policy headlines for geopolitical spillover, review local weather alerts before travel, and prioritize one high-probability income opportunity today (consulting, digital product, or market research).`;
+  return `${greeting}. Here's your briefing: risk-on sentiment is competing with inflation data — worth watching the spread. There are a couple of policy headlines with geopolitical spillover potential, so I'd keep an eye on those. Check local weather alerts if you're travelling today. And there's at least one high-probability income opportunity worth a look — consulting, a digital product, or a quick market research play. I'll flag anything that moves.`;
 }
 
 async function queryExternalAI(_prompt) {
@@ -81,30 +81,30 @@ function buildLocalResponse(prompt) {
   const snippets = [];
 
   if (text.includes('market') || text.includes('stock') || text.includes('econom')) {
-    snippets.push('Market lens: watch trend strength, rate expectations, and earnings revisions before acting.');
+    snippets.push('On markets: watch trend strength, rate expectations, and earnings revisions before committing.');
   }
 
   if (text.includes('geo') || text.includes('war') || text.includes('policy') || text.includes('global')) {
-    snippets.push('Geopolitical lens: focus on policy shifts, energy routes, and supply-chain exposure.');
+    snippets.push('Geopolitically: the ones worth tracking are policy shifts, energy routes, and supply-chain exposure.');
   }
 
   if (text.includes('income') || text.includes('side') || text.includes('opportunit')) {
-    snippets.push('Opportunity scan: pick one niche problem, validate demand quickly, then offer a paid solution.');
+    snippets.push('For opportunities: pick one niche problem, validate demand quickly, then offer a paid solution — keep it tight.');
   }
 
   if (text.includes('weather') || text.includes('alert')) {
-    snippets.push('Weather note: keep local alerts enabled; adjust travel, logistics, and scheduling based on advisories.');
+    snippets.push("Weather-wise: keep local alerts enabled and factor them into any travel or logistics decisions today.");
   }
 
   if (text.includes('productiv') || text.includes('organize') || text.includes('plan')) {
-    snippets.push('Productivity action: define top 3 outcomes, block execution windows, and defer low-value tasks.');
+    snippets.push('Productivity: lock in your top three outcomes, block execution time, and push low-value tasks to the end of the queue.');
   }
 
   if (snippets.length === 0) {
-    snippets.push('I can help with market trends, geopolitical analysis, opportunity scouting, weather awareness, and execution planning.');
+    snippets.push("I can help with markets, geopolitical analysis, opportunity scouting, weather, and planning. What's on your mind, Benny?");
   }
 
-  return `${assistantPersona} ${snippets.join(' ')}`;
+  return snippets.join(' ');
 }
 
 async function generateResponse(prompt) {

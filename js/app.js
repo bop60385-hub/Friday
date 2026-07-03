@@ -298,13 +298,32 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   const appState = { messages: [] };
+  let _demoIdx = 0;
+
+  const REPLIES = [
+    "On it. I've spotted three solid leads in the last 24 hours — want me to walk you through them, Benny?",
+    "Pulling the latest now. The AI sector is up 2.1%, there are two fintech grant windows open, and your watchlist has some unusual activity worth a look.",
+    "Already on it. Give me a moment — scanning live sources now.",
+    "Connected. What are we looking at?",
+    "Noted. I've flagged that for follow-up — anything else pressing?",
+    "The window looks good for roughly another 48 hours based on current signals. Worth moving on sooner rather than later.",
+    "Got it. Anything else I should be tracking for you?",
+    "I'll keep an eye on it and flag you if anything shifts meaningfully.",
+    "Interesting question. Let me dig into that — back with you shortly.",
+    "That's worth exploring. I'll pull what I can and give you a clean summary.",
+  ];
 
   const _convList = $('conv-list');
 
   function _greet() {
     const h = new Date().getHours();
-    const sal = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return `${sal}. I'm Friday, your personal intelligence assistant. I'm online and ready. Your briefing has been prepared. How can I assist you today?`;
+    const sal = h < 12 ? 'Good morning, Benny' : h < 17 ? 'Good afternoon, Benny' : 'Good evening, Benny';
+    const lines = [
+      `${sal}. I'm online and your briefing is ready whenever you are. What would you like to start with?`,
+      `${sal}. All systems up. Anything in particular you'd like me to pull first?`,
+      `${sal}. Ready when you are — briefing's standing by. Where shall we begin?`,
+    ];
+    return lines[new Date().getDate() % lines.length];
   }
 
   function _renderMsg(msg, scroll = true) {
