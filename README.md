@@ -18,6 +18,6 @@ Friday is a voice-first personal intelligence assistant web app designed for Git
 
 Open `./index.html` in a modern browser (HTTPS or localhost recommended for speech features).
 
-## Future AI API integration
+## AI backend integration
 
-`./app.js` includes an async `queryExternalAI(prompt)` hook for integrating external AI providers later.
+`./js/app.js` posts conversation requests to `https://friday-backend-lake.vercel.app/api/chat` and falls back to local canned replies only if the backend request fails.

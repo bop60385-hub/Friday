@@ -9,11 +9,11 @@
 const VERSION       = 'v1.0.0';
 const STORAGE_PREFS = 'friday_prefs';
 const STORAGE_HIST  = 'friday_history';
-const MAX_HISTORY   = 60;
+const MAX_HISTORY   = 10;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
-const BACKEND_URL   = 'https://friday-bop60385-hub.vercel.app/api/chat';
+const BACKEND_URL   = 'https://friday-backend-lake.vercel.app/api/chat';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -297,19 +297,7 @@ const VoiceEngine = (() => {
 
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
-  let _msgs    = [];
-  let _demoIdx = 0;
-
-  const FALLBACK_REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
+  const appState = { messages: [] };
 
   const _convList = $('conv-list');
 
@@ -322,6 +310,7 @@ const Convo = (() => {
   function _renderMsg(msg, scroll = true) {
     if (!_convList) return;
     const isAI = msg.role === 'ai';
+    const showSpeakButton = isAI && msg.pending !== true;
     const el   = document.createElement('div');
     el.className = 'conv-msg';
     el.innerHTML = `
@@ -329,31 +318,71 @@ const Convo = (() => {
       <div class="conv-bubble">
         <div class="conv-meta">
           <span>${isAI ? 'FRIDAY' : 'YOU'}</span> · ${esc(msg.time)}
-          ${isAI ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
+          ${showSpeakButton ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
         </div>
         <div class="conv-text">${esc(msg.text)}</div>
       </div>`;
     _convList.appendChild(el);
     if (scroll) _convList.scrollTop = _convList.scrollHeight;
+    return el;
   }
 
   function _addMsg(role, text) {
     const msg = { role, text, time: tsNow() };
-    _msgs.push(msg);
-    Hist.save(_msgs);
+    appState.messages.push(msg);
+    Hist.save(appState.messages);
     _renderMsg(msg);
     return msg;
   }
 
+  function _removeRenderedMsg(el) {
+    if (!el) return;
+    el.remove();
+    if (_convList) _convList.scrollTop = _convList.scrollHeight;
+  }
+
+  function _deliverReply(text) {
+    _addMsg('ai', text);
+    VoiceEngine.speak(text);
+    if (!VoiceEngine.canSpeak) VoiceEngine.setOrbState('standby');
+  }
+
+  async function _fetchReply(userMessage) {
+    console.log('Sending to backend');
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          history: appState.messages.slice(-MAX_HISTORY),
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Backend request failed with status ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('Backend response received', data);
+      const reply = typeof data.reply === 'string' ? data.reply.trim() : '';
+      if (!reply) {
+        throw new Error('Backend response did not include reply text');
+      }
+      return reply;
+    } catch (err) {
+      console.error('Backend error', err);
+      throw err;
+    }
+  }
+
   function init() {
-    _msgs = Hist.load();
-    if (_msgs.length === 0) {
-      _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
-      Hist.save(_msgs);
+    appState.messages = Hist.load();
+    if (appState.messages.length === 0) {
+      appState.messages.push({ role: 'ai', text: _greet(), time: tsNow() });
+      Hist.save(appState.messages);
     }
     if (_convList) {
       _convList.innerHTML = '';
-      _msgs.forEach(m => _renderMsg(m, false));
+      appState.messages.forEach(m => _renderMsg(m, false));
       _convList.scrollTop = _convList.scrollHeight;
     }
     /* Speak-message button delegation */
@@ -367,41 +396,22 @@ const Convo = (() => {
     if (!text.trim()) return;
     const inp = $('conv-input');
     if (inp) inp.value = '';
-
-    const history = _msgs
-      .filter(m => m.role !== 'system')
-      .slice(-20)
-      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
-
-    _addMsg('user', text);
+    const userMessage = text.trim();
+    _addMsg('user', userMessage);
     VoiceEngine.setOrbState('processing');
-
+    const thinkingEl = _renderMsg({ role: 'ai', text: 'Thinking...', time: tsNow(), pending: true });
     try {
-      console.log('Sending to backend');
-      const res = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      console.log('Backend response received');
-      const reply = data.reply || FALLBACK_REPLIES[_demoIdx % FALLBACK_REPLIES.length];
-      _demoIdx++;
-      _addMsg('ai', reply);
-      VoiceEngine.speak(reply);
+      const reply = await _fetchReply(userMessage);
+      _removeRenderedMsg(thinkingEl);
+      _deliverReply(reply);
     } catch (err) {
-      console.log('Backend error', err?.message || err);
-      const reply = FALLBACK_REPLIES[_demoIdx % FALLBACK_REPLIES.length];
-      _demoIdx++;
-      _addMsg('ai', reply);
-      VoiceEngine.speak(reply);
+      _removeRenderedMsg(thinkingEl);
+      _deliverReply("I'm sorry, the intelligence backend is currently unavailable. Please try again in a moment.");
     }
-    VoiceEngine.setOrbState('standby');
   }
 
   function clearHistory() {
-    _msgs = [];
+    appState.messages = [];
     Hist.clear();
     if (_convList) _convList.innerHTML = '';
     _addMsg('ai', _greet());
