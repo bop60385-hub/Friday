@@ -425,7 +425,7 @@ const Convo = (() => {
       _deliverReply(reply);
     } catch (err) {
       _removeRenderedMsg(thinkingEl);
-      _deliverReply("I'm sorry, the intelligence backend is currently unavailable. Please try again in a moment.");
+      VoiceEngine.setOrbState('standby');
     }
   }
 
