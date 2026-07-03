@@ -322,7 +322,7 @@ const Convo = (() => {
   function _renderMsg(msg, scroll = true) {
     if (!_convList) return;
     const isAI = msg.role === 'ai';
-    const showSpeakButton = isAI && !msg.pending;
+    const showSpeakButton = isAI && msg.pending !== true;
     const el   = document.createElement('div');
     el.className = 'conv-msg';
     el.innerHTML = `
