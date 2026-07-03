@@ -406,7 +406,7 @@ const Convo = (() => {
       _deliverReply(reply);
     } catch (err) {
       _removeRenderedMsg(thinkingEl);
-      _deliverReply("I'm sorry, I couldn't reach the intelligence backend right now. Please check your connection and try again.");
+      _deliverReply("I'm sorry, the intelligence backend is currently unavailable. Please try again in a moment.");
     }
   }
 
