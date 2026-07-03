@@ -298,18 +298,6 @@ const VoiceEngine = (() => {
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
   const appState = { messages: [] };
-  let _demoIdx = 0;
-
-  const REPLIES = [
-    "Absolutely. Scanning your target sectors now. I've found three high-probability opportunities in the last 24 hours. Shall I go through them?",
-    "Your briefing highlights a positive AI sector move of 2.1%, two new grant opportunities in fintech, and unusual volume on your watchlist. Which would you like to explore?",
-    "Of course. Running a deep scan now — results should be ready in approximately 15 seconds.",
-    "Connecting to live data sources. Market intelligence module is online and standing by.",
-    "Acknowledged. I've flagged that for follow-up and added a reminder to your agenda.",
-    "Based on current trends, the probability of this opportunity window remaining open is 78% over the next 48 hours.",
-    "I've noted that. Is there anything else you'd like me to look into?",
-    "Understood. I'll keep monitoring and alert you if anything changes significantly.",
-  ];
 
   const _convList = $('conv-list');
 
@@ -418,9 +406,7 @@ const Convo = (() => {
       _deliverReply(reply);
     } catch (err) {
       _removeRenderedMsg(thinkingEl);
-      const reply = REPLIES[_demoIdx % REPLIES.length];
-      _demoIdx++;
-      _deliverReply(reply);
+      _deliverReply("I'm sorry, the intelligence backend is currently unavailable. Please try again in a moment.");
     }
   }
 
