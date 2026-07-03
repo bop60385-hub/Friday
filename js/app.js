@@ -9,7 +9,7 @@
 const VERSION       = 'v1.0.0';
 const STORAGE_PREFS = 'friday_prefs';
 const STORAGE_HIST  = 'friday_history';
-const MAX_HISTORY   = 60;
+const MAX_HISTORY   = 10;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
@@ -367,7 +367,7 @@ const Convo = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
-          history: appState.messages,
+          history: appState.messages.slice(-MAX_HISTORY),
         }),
       });
       if (!res.ok) {
