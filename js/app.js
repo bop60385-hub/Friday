@@ -375,8 +375,7 @@ const Convo = (() => {
       }
       const data = await res.json();
       console.log('Backend response received', data);
-      const reply = [data.reply, data.response, data.message, data.text]
-        .find(value => typeof value === 'string' && value.trim());
+      const reply = typeof data.reply === 'string' ? data.reply.trim() : '';
       if (!reply) {
         throw new Error('Backend response did not include reply text');
       }
@@ -417,7 +416,7 @@ const Convo = (() => {
       const reply = await _fetchReply(userMessage);
       _removeRenderedMsg(thinkingEl);
       _deliverReply(reply);
-    } catch {
+    } catch (err) {
       _removeRenderedMsg(thinkingEl);
       const reply = REPLIES[_demoIdx % REPLIES.length];
       _demoIdx++;
