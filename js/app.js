@@ -13,6 +13,7 @@ const MAX_HISTORY   = 60;
 const WEATHER_API   = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_API   = 'https://api.bigdatacloud.net/data/reverse-geocode-client';
 const NEWS_API      = 'https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=6';
+const BACKEND_URL   = 'https://friday-backend-lake.vercel.app/api/chat';
 
 /* ── WMO Weather Code Map ────────────────────────────────────── */
 const WMO_CODES = {
@@ -296,7 +297,7 @@ const VoiceEngine = (() => {
 
 /* ── Conversation ────────────────────────────────────────────── */
 const Convo = (() => {
-  let _msgs    = [];
+  const appState = { messages: [] };
   let _demoIdx = 0;
 
   const REPLIES = [
@@ -321,6 +322,7 @@ const Convo = (() => {
   function _renderMsg(msg, scroll = true) {
     if (!_convList) return;
     const isAI = msg.role === 'ai';
+    const showSpeakButton = isAI && msg.pending !== true;
     const el   = document.createElement('div');
     el.className = 'conv-msg';
     el.innerHTML = `
@@ -328,31 +330,71 @@ const Convo = (() => {
       <div class="conv-bubble">
         <div class="conv-meta">
           <span>${isAI ? 'FRIDAY' : 'YOU'}</span> · ${esc(msg.time)}
-          ${isAI ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
+          ${showSpeakButton ? `<button class="btn-speak-msg" data-text="${esc(msg.text)}" title="Speak this message">♫</button>` : ''}
         </div>
         <div class="conv-text">${esc(msg.text)}</div>
       </div>`;
     _convList.appendChild(el);
     if (scroll) _convList.scrollTop = _convList.scrollHeight;
+    return el;
   }
 
   function _addMsg(role, text) {
     const msg = { role, text, time: tsNow() };
-    _msgs.push(msg);
-    Hist.save(_msgs);
+    appState.messages.push(msg);
+    Hist.save(appState.messages);
     _renderMsg(msg);
     return msg;
   }
 
+  function _removeRenderedMsg(el) {
+    if (!el) return;
+    el.remove();
+    if (_convList) _convList.scrollTop = _convList.scrollHeight;
+  }
+
+  function _deliverReply(text) {
+    _addMsg('ai', text);
+    VoiceEngine.speak(text);
+    if (!VoiceEngine.canSpeak) VoiceEngine.setOrbState('standby');
+  }
+
+  async function _fetchReply(userMessage) {
+    console.log('Sending to backend');
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          history: appState.messages,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Backend request failed with status ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('Backend response received', data);
+      const reply = typeof data.reply === 'string' ? data.reply.trim() : '';
+      if (!reply) {
+        throw new Error('Backend response did not include reply text');
+      }
+      return reply;
+    } catch (err) {
+      console.error('Backend error', err);
+      throw err;
+    }
+  }
+
   function init() {
-    _msgs = Hist.load();
-    if (_msgs.length === 0) {
-      _msgs.push({ role: 'ai', text: _greet(), time: tsNow() });
-      Hist.save(_msgs);
+    appState.messages = Hist.load();
+    if (appState.messages.length === 0) {
+      appState.messages.push({ role: 'ai', text: _greet(), time: tsNow() });
+      Hist.save(appState.messages);
     }
     if (_convList) {
       _convList.innerHTML = '';
-      _msgs.forEach(m => _renderMsg(m, false));
+      appState.messages.forEach(m => _renderMsg(m, false));
       _convList.scrollTop = _convList.scrollHeight;
     }
     /* Speak-message button delegation */
@@ -362,22 +404,28 @@ const Convo = (() => {
     });
   }
 
-  function handleInput(text) {
+  async function handleInput(text) {
     if (!text.trim()) return;
     const inp = $('conv-input');
     if (inp) inp.value = '';
-    _addMsg('user', text);
+    const userMessage = text.trim();
+    _addMsg('user', userMessage);
     VoiceEngine.setOrbState('processing');
-    setTimeout(() => {
+    const thinkingEl = _renderMsg({ role: 'ai', text: 'Thinking...', time: tsNow(), pending: true });
+    try {
+      const reply = await _fetchReply(userMessage);
+      _removeRenderedMsg(thinkingEl);
+      _deliverReply(reply);
+    } catch (err) {
+      _removeRenderedMsg(thinkingEl);
       const reply = REPLIES[_demoIdx % REPLIES.length];
       _demoIdx++;
-      _addMsg('ai', reply);
-      VoiceEngine.speak(reply);
-    }, 800 + Math.random() * 600);
+      _deliverReply(reply);
+    }
   }
 
   function clearHistory() {
-    _msgs = [];
+    appState.messages = [];
     Hist.clear();
     if (_convList) _convList.innerHTML = '';
     _addMsg('ai', _greet());
